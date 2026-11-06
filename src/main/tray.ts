@@ -1,5 +1,6 @@
 import os from "node:os";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { app, Menu, MenuItemConstructorOptions, nativeImage, NativeImage, Tray } from "electron";
 
@@ -10,10 +11,17 @@ import showManageWindow from "./windows/manage";
 
 import iconFilename from "../../assets/icon_256.png?no-inline";
 
-let quitRequested = false;
-
-const defaultIconPath = resolve(import.meta.dirname, `.${iconFilename}`);
+const defaultIconPath = iconFilename.startsWith("file:")
+  ? fileURLToPath(iconFilename)
+  : resolve(import.meta.dirname, `.${iconFilename}`);
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
 const defaultMenuItems: MenuItemConstructorOptions[] = [
+  { label: "显示主窗口", click: showMainWindow },
   {
     label: "管理 Open Orpheus",
     click: () => {
@@ -23,12 +31,7 @@ const defaultMenuItems: MenuItemConstructorOptions[] = [
   {
     label: "退出",
     click: () => {
-      if (trayInstalled && !quitRequested && mainWindow && !mainWindow.isDestroyed()) {
-        // NCM seems to be ready, and is not , we will go with graceful way as of now
-        mainWindow.webContents.send("channel.call", "winhelper.onmenuclick", "exitApp", 0);
-        quitRequested = true;
-        return;
-      }
+      // Use the host shutdown sequence; legacy pages may ignore exitApp menu events.
       app.quit();
     },
   },
@@ -45,6 +48,8 @@ const trayIcon = new Tray(defaultIcon);
 
 trayIcon.setToolTip("Open Orpheus 启动中");
 trayIcon.setContextMenu(Menu.buildFromTemplate(defaultMenuItems));
+trayIcon.on("click", clickHandler);
+trayIcon.on("right-click", rightClickHandler);
 
 function createIconForDarwin(icon: NativeImage) {
   if (os.platform() !== "darwin") return icon;
@@ -67,6 +72,10 @@ function createIconForDarwin(icon: NativeImage) {
 }
 
 export function setIcon(newIcon: NativeImage) {
+  if (newIcon.isEmpty()) {
+    LOGGER.warn("Ignoring empty tray icon");
+    return;
+  }
   newIcon = createIconForDarwin(newIcon);
   icon = newIcon;
   if (trayInstalled) {
@@ -84,43 +93,37 @@ export function setTooltip(newTooltip: string) {
 
 async function clickHandler() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  // Linux can only receives click, so a different behavior is used
-  // The `onclick` will be send when main window is invisible, and `onrightclick` will be send when main window is visible
+  if (os.platform() !== "linux") {
+    if (trayInstalled) mainWindow.webContents.send("channel.call", "trayicon.onclick");
+    else showMainWindow();
+    return;
+  }
   const clickBehavior = await settings.get("tray.clickBehavior");
-  mainWindow.webContents.send(
-    "channel.call",
-    // We only send rightclick here if is Linux, the main window is visible, and the user has not set the click behavior to "always-show-main-window",
-    // or, on Linux, if the user has set the click behavior to "always-show-menu", in which case we always send rightclick to show the menu
-    os.platform() !== "linux" ||
-      (clickBehavior !== "always-show-menu" && !mainWindow.isVisible()) ||
-      clickBehavior === "always-show-main-window"
-      ? "trayicon.onclick"
-      : "trayicon.onrightclick"
-  );
+  if (
+    clickBehavior === "always-show-main-window" ||
+    (clickBehavior !== "always-show-menu" && (!mainWindow.isVisible() || mainWindow.isMinimized()))
+  ) {
+    showMainWindow();
+  } else {
+    trayIcon.popUpContextMenu();
+  }
 }
 
 function rightClickHandler() {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  mainWindow.webContents.send("channel.call", "trayicon.onrightclick");
+  if (os.platform() === "linux" || !trayInstalled) trayIcon.popUpContextMenu();
+  else if (mainWindow && !mainWindow.isDestroyed())
+    mainWindow.webContents.send("channel.call", "trayicon.onrightclick");
 }
 
 export function install() {
-  if (trayInstalled) {
-    LOGGER.warn("Tray icon is already installed");
-    throw new Error("NCM already installed the tray icon");
-  }
-  if (!icon) {
-    LOGGER.error("Cannot install tray icon because no icon is available");
-    throw new Error("Tray icon not initialized");
-  }
-  trayIcon.setImage(icon);
+  // Legacy clients may install before supplying a custom image, and may repeat
+  // installation after a renderer reload. The host icon is always available.
+  trayIcon.setImage(icon || defaultIcon);
   if (tooltip) {
     trayIcon.setToolTip(tooltip);
   } else {
     trayIcon.setToolTip("");
   }
-  trayIcon.on("click", clickHandler);
-  trayIcon.on("right-click", rightClickHandler);
   if (os.platform() === "linux") {
     trayIcon.setContextMenu(
       Menu.buildFromTemplate([
@@ -145,13 +148,7 @@ export function install() {
 }
 
 export function uninstall() {
-  if (!trayInstalled) {
-    LOGGER.warn("Cannot uninstall tray icon because it is not installed");
-    throw new Error("Tray icon not installed");
-  }
-  trayIcon.setToolTip("");
-  trayIcon.off("click", clickHandler);
-  trayIcon.off("right-click", rightClickHandler);
+  trayIcon.setToolTip("Open Orpheus");
   trayIcon.setImage(defaultIcon);
   trayIcon.setContextMenu(Menu.buildFromTemplate(defaultMenuItems));
   trayInstalled = false;
