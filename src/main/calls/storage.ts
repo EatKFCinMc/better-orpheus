@@ -4,8 +4,8 @@ import { registerShutdownTask } from "../lifecycle";
 import { storageWritePath, writeStorageFile, flushStorageWrites } from "../legacy-webdata";
 import { readDirectoryPreferences } from "../storage-directories";
 import { FSWatcher, watch } from "node:fs";
-import { copyFile, cp, mkdir, readdir, readFile, rm, stat } from "node:fs/promises";
-import { dirname, extname, join, resolve } from "node:path";
+import { copyFile, cp, mkdir, readdir, readFile, rm } from "node:fs/promises";
+import { dirname, extname, join, relative, resolve } from "node:path";
 
 import { app, dialog, Notification } from "electron";
 import mime from "mime";
@@ -31,49 +31,27 @@ import {
 } from "../cache/PlayCacheManager";
 import createCacheManager, { lyricCacheManager, playCacheManager } from "../cache";
 import { toError } from "@shared/util";
-import { commentToID3Json, ID3JsonToComment } from "../id3";
+import { ID3JsonToComment } from "../id3";
 import globalLogger from "../logger";
 
 registerShutdownTask({ name: "legacy-webdata-writes", timeoutMs: 3000, run: flushStorageWrites });
 
-type DownloadScannerItem = {
-  comment: string; // comment added by addid3
-  creation_time: number; // timestamp
-  last_accessed: number;
-  last_modified: number;
-  path: string; // path relative to download dir
-  size: number;
-};
+import {
+  readDownloadedMusicInfo as readMusicInfo,
+  type DownloadScannerItem,
+} from "../downloaded-music";
 
-async function readDownloadedMusicInfo(
-  file: string,
-  base?: string
-): Promise<DownloadScannerItem | undefined> {
+async function readDownloadedMusicInfo(file: string, base?: string) {
   const filePath = normalizePath(base ?? "", file);
-  let comment;
   try {
-    const taggedFile = await MusicFile.load(filePath);
-    const json = commentToID3Json(taggedFile.comment);
-
-    if (!json) return;
-
-    comment = json;
+    return await readMusicInfo(file, filePath);
   } catch (error) {
     globalLogger.error(
       { name: "music-info-reader", file: filePath, err: error },
-      "Error reading ID3 tags"
+      "Error reading music tags"
     );
     return;
   }
-  const statResult = await stat(filePath);
-  return {
-    comment,
-    creation_time: statResult.birthtimeMs,
-    last_accessed: statResult.atimeMs,
-    last_modified: statResult.mtimeMs,
-    path: file,
-    size: statResult.size,
-  };
 }
 
 /**
@@ -291,11 +269,6 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
       const batch: DownloadScannerItem[] = [];
       let scanned = 0;
 
-      const entries = await readdir(path, {
-        recursive: true,
-        withFileTypes: true,
-      });
-
       const flush = () => {
         if (batch.length > 0) {
           event.sender.send("channel.call", "storage.ondownloadscanner", batch.splice(0));
@@ -303,6 +276,7 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
       };
 
       try {
+        const entries = await readdir(path, { recursive, withFileTypes: true });
         for (const entry of entries) {
           if (entry.isDirectory()) {
             continue;
@@ -313,7 +287,7 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
           const fullPath = normalizePath(entry.parentPath, entry.name);
           if (excludeSet.has(fullPath)) continue;
 
-          const relToBase = fullPath.slice(path.length + 1);
+          const relToBase = relative(path, fullPath);
           const info = await readDownloadedMusicInfo(relToBase, path);
           if (!info) continue;
 

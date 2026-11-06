@@ -73,6 +73,7 @@
     "magic-string": "^1.4.3",
     "memfs": "^4.80.0",
     "mime": "^4.1.1",
+    "music-metadata": "^12.3.4",
     "oxfmt": "^0.74.0",
     "oxlint": "^1.89.0",
     "oxlint-tsgolint": "^7.0.2004",
