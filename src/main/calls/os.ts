@@ -284,11 +284,11 @@ registerCallHandler<[], [number, number]>("os.exitWindowSystemLeftTime", () => {
 });
 
 registerCallHandler<[string], [string]>("os.getDiskSpace", async (event, path) => {
-  const statResult = await statfs(path);
+  const statResult = await statfs(path ? normalizePath(path) : app.getPath("home"));
   return [
     JSON.stringify({
       total: statResult.blocks * statResult.bsize,
-      free: statResult.bfree * statResult.bsize,
+      free: statResult.bavail * statResult.bsize,
     }),
   ];
 });

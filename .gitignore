@@ -110,3 +110,6 @@ target
 # Module Dist
 /modules/*/dist/*
 !/modules/*/dist/*.ts
+
+# Legacy client runtime files
+/webdata/

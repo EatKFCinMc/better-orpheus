@@ -46,6 +46,9 @@ if (started) {
   app.quit();
 }
 
+// Set the profile before Electron creates its single-instance lock files.
+app.setPath("userData", userdataDir);
+
 // Enforce single instance
 if (!("OPEN_ORPHEUS_IGNORE_SINGLE_INSTANCE" in process.env) && !app.requestSingleInstanceLock()) {
   app.quit();
@@ -85,8 +88,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-app.setPath("userData", userdataDir);
 
 app.setAppUserModelId("com.squirrel.OpenOrpheus.OpenOrpheus");
 
@@ -317,6 +318,7 @@ app.on("ready", async () => {
       await import("./main/settings").then((m) => m.initialize());
     });
 
+    await import("./main/legacy-webdata").then((m) => m.migrateLegacyWebdata(dataDir));
     LOGGER.info("Databases and settings initialized");
 
     // Publish lyrics on D-Bus. Linux-only and fire-and-forget: the native
