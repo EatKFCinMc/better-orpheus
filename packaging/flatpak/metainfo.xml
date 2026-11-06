@@ -16,7 +16,7 @@
   <url type="contribute">https://github.com/YUCLing/open-orpheus/blob/main/CONTRIBUTING.md</url>
 
   <metadata_license>CC-BY-4.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>GPL-3.0</project_license>
 
   <supports>
     <control>pointing</control>

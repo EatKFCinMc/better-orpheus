@@ -59,6 +59,16 @@ installLifecycle();
 // Register privileged schemes
 protocol.registerSchemesAsPrivileged([
   {
+    scheme: "betterncm",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: true,
+    },
+  },
+  {
     scheme: "orpheus",
     privileges: {
       standard: true,
@@ -320,6 +330,7 @@ app.on("ready", async () => {
 
     await import("./main/legacy-webdata").then((m) => m.migrateLegacyWebdata(dataDir));
     LOGGER.info("Databases and settings initialized");
+    await import("./main/betterncm").then((m) => m.initializeBetterNCM());
 
     // Publish lyrics on D-Bus. Linux-only and fire-and-forget: the native
     // module is loaded lazily, and startup must not wait for the session bus.

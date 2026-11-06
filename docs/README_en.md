@@ -120,6 +120,12 @@ If the automatic download fails, you can manually copy both folders from your of
 
 - [D-Bus services](./DBUS_SERVICES_en.md)
 - [Logging configuration](./LOGGING.md)
+## Credits
+
+Better Orpheus is maintained by EatKFCinMc and is based on Open Orpheus, developed by YUCLing and other contributors, and BetterNCM, developed by std-microblock.
+
+The original Open Orpheus code retains its MIT license and copyright notices. BetterNCM-related code retains the upstream GPLv3 license and original notices. The integrated version of Better Orpheus is distributed under GPLv3, and the original copyrights of each component remain with their respective rights holders.
+
 
 ## Disclaimer
 

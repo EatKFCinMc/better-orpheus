@@ -35,6 +35,9 @@
   import Database from "@lucide/svelte/icons/database";
   import LocalResources from "./LocalResources.svelte";
 
+  import Puzzle from "@lucide/svelte/icons/puzzle";
+  import Plugins from "./Plugins.svelte";
+
   import AppWindow from "@lucide/svelte/icons/app-window";
   import Window from "./Window.svelte";
 
@@ -67,6 +70,12 @@
       name: "本地资源",
       icon: Database,
       component: LocalResources,
+    },
+    {
+      id: "plugins",
+      name: "插件菜单",
+      icon: Puzzle,
+      component: Plugins,
     },
     {
       id: "window",

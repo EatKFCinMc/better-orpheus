@@ -1,3 +1,4 @@
+import { getInstalledPlugins, deleteInstalledPlugins } from "../betterncm";
 import os from "node:os";
 import path, { resolve } from "node:path";
 import { readdir, stat, rm } from "node:fs/promises";
@@ -59,6 +60,11 @@ class ManageWindow extends ManagedWindow {
           });
           app.quit();
         },
+      },
+
+      plugins: {
+        list: async () => getInstalledPlugins(),
+        remove: async (_event, ids) => deleteInstalledPlugins(ids),
       },
 
       cache: {

@@ -37,6 +37,7 @@ switch (process.platform) {
 const config: ForgeConfig = {
   packagerConfig: {
     icon,
+    extraResource: ["assets/betterncm", "LICENSE", "LICENSES"],
     asar: {
       unpack: "**/*.{so*,dylib,dll}",
     },

@@ -1,0 +1,7 @@
+{
+  "long45343/material-you-theme-NCMv3:material-u-theme-ncmv3@v1.0.6": {
+    "range": ">=3.0.0 <4.0.0",
+    "source": "https://github.com/long45343/material-you-theme-NCMv3#readme",
+    "reason": "Publisher documents a rewrite for the NCM 3.x frontend. The package manifest omits ncm-version-req. This does not assert every 3.x build has been tested."
+  }
+}

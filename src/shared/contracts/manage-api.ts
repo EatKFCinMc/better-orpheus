@@ -1,3 +1,4 @@
+import type { InstalledPlugin } from "@shared/types/manage";
 import type { UpdateInfo } from "@shared/types/update";
 import type { CacheGroupStats, AllCacheStats } from "@shared/types/manage";
 
@@ -17,6 +18,10 @@ export interface ManageContract {
   pack: {
     getWebPackCommitHash(): Promise<string>;
     redownloadPackage(): Promise<void>;
+  };
+  plugins: {
+    list(): Promise<InstalledPlugin[]>;
+    remove(ids: string[]): Promise<void>;
   };
   cache: {
     getStats(): Promise<AllCacheStats>;

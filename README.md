@@ -123,6 +123,12 @@ Open Orpheus 在首次启动时如果检测到资源缺失，会自动从网易�
 - [Wayland 窗口规则配置文档](./docs/WM_RULES.md)
 - [D-Bus 服务文档](./docs/DBUS_SERVICES.md)
 - [日志配置文档](./docs/LOGGING.md)
+## 致谢
+
+Better Orpheus 由 EatKFCinMc 维护，基于 YUCLing 及其他贡献者开发的 Open Orpheus，以及 std-microblock 开发的 BetterNCM。
+
+Open Orpheus 的原始代码保留其 MIT 许可证及版权声明。BetterNCM 相关代码保留上游的 GPLv3 许可证和原始通知。Better Orpheus 的整合版本按 GPLv3 分发，各组件的原始版权归其权利人所有。
+
 
 ## 免责声明
 

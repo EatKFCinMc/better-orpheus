@@ -1,5 +1,7 @@
 import { disableClientUpdateChecks } from "./packs/client-update";
 import { parseLegacySkinPath, readLegacySkinAsset } from "./packs/legacy-skin";
+import { applyHijacks } from "./betterncm/hijacks";
+import resourceVersions from "../../versions.json";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -88,7 +90,13 @@ async function loadFromFilePath(path: string): Promise<SimpleResponse> {
     const fileContent = await packManager.getPack<WebPack>("web").readFile(path);
     const contentType = mime.getType(extname(path)) || "application/octet-stream";
     const content = /\.(?:js|html|css)$/.test(path)
-      ? Buffer.from(disableClientUpdateChecks(fileContent.toString("utf8")))
+      ? Buffer.from(
+          applyHijacks(
+            `orpheus://orpheus${path.startsWith("/") ? path : "/" + path}`,
+            disableClientUpdateChecks(fileContent.toString("utf8")),
+            resourceVersions.version
+          )
+        )
       : Buffer.from(fileContent);
     return { content, contentType };
   } catch {
@@ -613,6 +621,9 @@ export default function registerOrpheusScheme(protocol: Protocol) {
         cacheable,
       } = await loadFromOrpheusUrl(request.url);
       const headers: Record<string, string> = {};
+      if (new URL(request.url).hostname === "cache") {
+        headers["Access-Control-Allow-Origin"] = "orpheus://orpheus";
+      }
       if (contentType) {
         headers["Content-Type"] = contentType;
       }

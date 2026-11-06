@@ -1,0 +1,4 @@
+[submodule "chromatic"]
+	path = chromatic
+	url = https://github.com/std-microblock/chromatic.git
+	branch = v2

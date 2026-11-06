@@ -13,3 +13,11 @@ export interface AllCacheStats {
   lyrics: CacheGroupStats;
   wasm: CacheGroupStats;
 }
+
+export interface InstalledPlugin {
+  id: string;
+  name: string;
+  version: string;
+  development: boolean;
+  protected: boolean;
+}

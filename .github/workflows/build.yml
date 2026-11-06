@@ -22,7 +22,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          submodules: true
           ref: ${{ inputs.ref || github.ref }}
+
+      - name: Initialize BetterNCM JS framework
+        run: git -C chromatic submodule update --init src/js-framework
 
       - name: Resolve pinned Rust version
         id: toolchain

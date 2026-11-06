@@ -111,5 +111,9 @@ target
 /modules/*/dist/*
 !/modules/*/dist/*.ts
 
-# Legacy client runtime files
+# Built upstream BetterNCM assets
+/assets/betterncm/
+
+# Legacy client runtime files and generated audit data
 /webdata/
+/outputs/
