@@ -1,4 +1,4 @@
-import type { LyricLine, LyricWord, Lyrics } from "@shared/types/lyrics";
+import type { LyricLine, LyricWord, Lyrics, LyricsStore } from "@shared/types/lyrics";
 
 /**
  * Parse a timestamp tag like `[mm:ss.xx]` or `[mm:ss:xx]` into milliseconds.
@@ -147,4 +147,22 @@ export function parseYrc(yrc: string): Lyrics {
   LOGGER.debug({ lines: lines.length }, "Parsed YRC lyrics");
 
   return lines;
+}
+
+/** 2.x represents absent translations and romanizations with null. */
+export function parseClientLyrics(
+  content: Partial<Record<"lrc" | "yrc" | "tlrc" | "romalrc", string | null>> | null
+): LyricsStore | null {
+  const text = (key: "lrc" | "yrc" | "tlrc" | "romalrc") =>
+    typeof content?.[key] === "string" ? content[key] : "";
+  const lrc = text("lrc");
+  if (!lrc.trim()) return null;
+  const result: LyricsStore = { regular: parseLrc(lrc) };
+  const yrc = text("yrc"),
+    translated = text("tlrc"),
+    romanized = text("romalrc");
+  if (yrc.trim()) result["per-word"] = parseYrc(yrc);
+  if (translated.trim()) result.translate = parseLrc(translated);
+  if (romanized.trim()) result.roma = parseLrc(romanized);
+  return result;
 }

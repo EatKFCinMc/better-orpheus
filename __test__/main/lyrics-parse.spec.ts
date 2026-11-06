@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseLrc, parseYrc } from "../../src/main/lyrics/parse";
+import { parseLrc, parseYrc, parseClientLyrics } from "../../src/main/lyrics/parse";
 
 describe("parseLrc", () => {
   it("parses timestamps, text and inferred end times", () => {
@@ -140,4 +140,17 @@ describe("parseYrc", () => {
   it("returns an empty array for non-string input", () => {
     expect(parseYrc(null as unknown as string)).toEqual([]);
   });
+});
+
+it("accepts absent legacy lyric fields while preserving the original lyrics", () => {
+  const parsed = parseClientLyrics({ lrc: "[00:01.00]Hello", tlrc: null, romalrc: null, yrc: "" });
+  expect(parsed?.regular[0].words[0].text).toBe("Hello");
+  expect(parsed?.translate).toBeUndefined();
+  expect(parsed?.roma).toBeUndefined();
+  expect(parseClientLyrics(null)).toBeNull();
+  expect(parseClientLyrics({ lrc: null })).toBeNull();
+  expect(
+    parseClientLyrics({ lrc: "[00:01.00]Hello", tlrc: "[00:01.00]你好" })?.translate?.[0].words[0]
+      .text
+  ).toBe("你好");
 });

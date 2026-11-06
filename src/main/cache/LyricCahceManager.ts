@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
@@ -53,7 +54,13 @@ export default class LyricCacheManager {
 
   private getEntryKey(songId: string): string {
     const key = `${songId}`;
-    if (basename(key) !== key) {
+    // Legacy 2.x uses the full request URL as its cache identity. Hash the
+    // complete URL so language/options and different endpoints stay distinct.
+    if (/^https?:\/\//i.test(key)) {
+      const url = new URL(key);
+      return `url-${createHash("sha256").update(url.href).digest("hex")}`;
+    }
+    if (!key || key === "." || key === ".." || /[\\\0]/.test(key) || basename(key) !== key) {
       throw new Error(`Invalid lyric cache key: ${songId}`);
     }
     return key;
