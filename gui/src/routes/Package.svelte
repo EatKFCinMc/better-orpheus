@@ -29,13 +29,14 @@
     type="button"
     class={cn(buttonVariants({ variant: "default" }), "mt-4 cursor-pointer")}
   >
-    重新下载资源包
+    重新获取资源
   </Dialog.Trigger>
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title>确认重新下载推荐资源包</Dialog.Title>
+      <Dialog.Title>重新获取网易云音乐资源</Dialog.Title>
       <Dialog.Description
-        >重新下载推荐资源包将需要重启 Open Orpheus，当前版本资源包将被删除。确定吗？</Dialog.Description
+        >更换资源需要重启 Open Orpheus。重启后可从官方下载或选择本地 EXE
+        安装包，失败时保留现有资源。是否继续？</Dialog.Description
       >
     </Dialog.Header>
     <Dialog.Footer>

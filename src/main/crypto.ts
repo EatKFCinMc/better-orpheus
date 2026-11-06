@@ -80,6 +80,7 @@ export function deData(
   key = DATA_AES_KEY,
   doubleBase64 = true
 ): Buffer | null {
+  if (typeof bufOr2Base64 !== "string" && !Buffer.isBuffer(bufOr2Base64)) return null;
   if (!Buffer.isBuffer(key) || key.length !== 0x10) {
     LOGGER.error({ algo: "deData" }, "Invalid input key: %s", key);
     return null;

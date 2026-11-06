@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { Database } from "@open-orpheus/database";
 
 import { data } from "./folders";
+import packManager from "./pack";
 
 const pathToWebDb = join(data, "webdb.dat");
 const pathToMusicLibrary = join(data, "library.dat");
@@ -14,6 +15,21 @@ export let nativeDb: Database;
 
 export async function initializeDatabases() {
   webDb = new Database(pathToWebDb);
+  const webPack = packManager.getPack("web");
+  if (!webPack.fileList.includes("/pub/COMMITHASH")) {
+    // Legacy clients keep their idempotent schema checks in the signed core bundle.
+    // Read SQL literals only; never execute JavaScript from the bundle.
+    for (const file of webPack.fileList.filter((name) => /^\/pub\/core\.[\w]+\.js$/.test(name))) {
+      const source = (await webPack.readFile(file)).toString("utf8");
+      for (const match of source.matchAll(
+        /checkSQL:(?:'((?:\\.|[^'\\])*)'|"((?:\\.|[^"\\])*)")/g
+      )) {
+        const sql = (match[1] ?? match[2]).replace(/\\(['"\\])/g, "$1");
+        if (!sql.startsWith("CREATE TABLE IF NOT EXISTS ")) continue;
+        await webDb.executeTransaction(sql);
+      }
+    }
+  }
   musicLibraryDb = new Database(pathToMusicLibrary);
 
   await musicLibraryDb.executeSql(`CREATE TABLE IF NOT EXISTS track (

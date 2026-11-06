@@ -24,6 +24,7 @@ export function fireNativeCall<Args extends unknown[]>(command: string, ...args:
 }
 
 contextBridge.exposeInMainWorld("channel", {
+  encryptId: (id: string) => ipcRenderer.sendSync("channel.encryptId", id),
   enData: (data: string) => ipcRenderer.sendSync("channel.enData", data),
   deData: (data: string) => ipcRenderer.sendSync("channel.deData", data),
   serialData: (data: [string, string | object]) =>

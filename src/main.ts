@@ -241,8 +241,8 @@ app.on("ready", async () => {
           dialog.showErrorBox(
             "Open Orpheus",
             noUsablePack
-              ? "资源包下载失败"
-              : "资源包下载失败\n可通过 Open Orpheus 管理界面重新尝试下载"
+              ? "资源包导入失败"
+              : "资源包导入失败\n可通过 Open Orpheus 管理界面重新选择安装包导入"
           );
         }
         if (noUsablePack) {

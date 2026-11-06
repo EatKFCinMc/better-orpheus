@@ -106,6 +106,40 @@ export function setProxy(agents: Agents | undefined) {
 }
 
 export function setupRequestInterceptors() {
+  // 2.x uses browser XHR instead of the newer network.fetch bridge.
+  for (const scheme of ["http", "https"]) {
+    session.defaultSession.protocol.handle(scheme, async (request) => {
+      const url = new URL(request.url);
+      const legacyApi =
+        (url.hostname === "music.163.com" || url.hostname.endsWith(".music.163.com")) &&
+        /^\/(?:eapi|api|weapi)\//.test(url.pathname) &&
+        request.headers.get("origin") === "orpheus://orpheus";
+      if (!legacyApi) {
+        return session.defaultSession.fetch(request, { bypassCustomProtocolHandlers: true });
+      }
+      const cors = {
+        "Access-Control-Allow-Origin": "orpheus://orpheus",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+          request.headers.get("access-control-request-headers") || "Content-Type",
+      };
+      if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+      url.protocol = "https:";
+      const response = await session.defaultSession.fetch(url.toString(), {
+        method: request.method,
+        headers: request.headers,
+        body:
+          request.method === "GET" || request.method === "HEAD"
+            ? undefined
+            : await request.arrayBuffer(),
+        bypassCustomProtocolHandlers: true,
+      });
+      const headers = new Headers(response.headers);
+      for (const [name, value] of Object.entries(cors)) headers.set(name, value);
+      return new Response(response.body, { status: response.status, headers });
+    });
+  }
   LOGGER.debug("Installing request interceptors on the default session");
 
   session.defaultSession.webRequest.onBeforeSendHeaders(async (details, callback) => {

@@ -4,6 +4,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import { channel } from "./preload/util";
+import { repairLegacySettings } from "./preload/legacy-settings";
 
 import "./preload/channel";
 import { fireNativeCall } from "./preload/channel";
@@ -22,6 +23,13 @@ const mainWorldInterface = {
   fireNativeCall,
   dragWindow: () => ipcRenderer.invoke("channel.call", "winhelper.dragWindow"),
 };
+
+if (channel === "main") {
+  // Runs synchronously before any scripts from the imported legacy pack.
+  contextBridge.executeInMainWorld({
+    func: repairLegacySettings,
+  });
+}
 
 LOGGER.debug({ channel }, "Installing main-world patches");
 contextBridge.executeInMainWorld({

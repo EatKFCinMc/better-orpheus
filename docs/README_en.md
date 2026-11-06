@@ -103,7 +103,7 @@ Download from [Releases](https://github.com/YUCLing/open-orpheus/releases/latest
 
 This project does not bundle some required resources because they are owned by NetEase.
 
-Open Orpheus will **automatically download** the package from NetEase's CDN on first launch if it is missing, so manual setup is usually not required.
+Open Orpheus will **automatically download** the package from NetEase's CDN on first launch if it is missing, so manual setup is usually not required. You can also manually select a local EXE installer for version 2.10.13.202675.
 
 Resources are stored in the `package` subfolder of the data directory:
 
