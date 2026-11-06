@@ -21,7 +21,7 @@
   const socials = [
     {
       name: "GitHub",
-      link: "https://github.com/YUCLing/open-orpheus",
+      link: __APP_HOMEPAGE__,
       icon: GitHub,
     },
   ];
@@ -115,10 +115,10 @@
   <Dialog.Content>
     {#await updateInfoPromise then updateInfo}
       {#if updateInfo}
-        <Dialog.Title class="text-xl">发现新版本 Open Orpheus</Dialog.Title>
+        <Dialog.Title class="text-xl">发现新版本 Better Orpheus</Dialog.Title>
         <Dialog.Description>
           <p>
-            Open Orpheus 已更新到 <b>{updateInfo.version}</b>。建议您更新以获得最佳体验。
+            Better Orpheus 已更新到 <b>{updateInfo.version}</b>。建议您更新以获得最佳体验。
           </p>
           <p class="mt-4 text-right">
             <Button variant="link" href={updateInfo.url} target="_blank">查看详细信息</Button>
@@ -142,7 +142,7 @@
                   class="grid h-auto cursor-pointer grid-cols-[auto_1fr] grid-rows-[auto_auto] gap-0"
                 >
                   <img src={Logo} alt="Logo" class="row-span-2 mr-2 h-10 w-10 self-center" />
-                  <h1 class="text-xl font-bold">Open Orpheus</h1>
+                  <h1 class="text-xl font-bold">Better Orpheus</h1>
                   <p class="text-xs opacity-75">v{__APP_VERSION__}</p>
                 </Sidebar.MenuButton>
               {/snippet}
@@ -150,7 +150,7 @@
             <Dialog.Content>
               <div class="text-center">
                 <img src={Logo} alt="Logo" class="m-auto h-24 w-24" />
-                <h1 class="text-3xl font-bold">Open Orpheus</h1>
+                <h1 class="text-3xl font-bold">Better Orpheus</h1>
                 <p class="mt-2">
                   v{__APP_VERSION__}<Button
                     variant="ghost"
@@ -186,14 +186,14 @@
               </div>
               <div class="text-center">
                 <p>
-                  Open Orpheus
+                  Better Orpheus
                   是一个以互操作性为目的的独立开源项目，与网易公司没有任何关联、授权或认可关系。
                 </p>
                 <p>"网易云音乐"、"Orpheus" 等名称及相关商标归网易公司所有。</p>
               </div>
               <div class="text-center">
                 <p>
-                  Open Orpheus 的诞生离不开 <Button
+                  Better Orpheus 的诞生离不开 <Button
                     class="px-0"
                     target="_blank"
                     href="https://www.chromium.org/"
@@ -201,7 +201,7 @@
                   > 开源项目以及其他<Button
                     class="px-0"
                     target="_blank"
-                    href="https://github.com/YUCLing/open-orpheus/releases/download/v{__APP_VERSION__}/LICENSES.chromium.{api.platform}.html"
+                    href="{__APP_HOMEPAGE__}/releases/download/v{__APP_VERSION__}/LICENSES.chromium.{api.platform}.html"
                     variant="link">开源软件</Button
                   >。
                 </p>

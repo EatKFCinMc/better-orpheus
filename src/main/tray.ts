@@ -23,7 +23,7 @@ function showMainWindow() {
 const defaultMenuItems: MenuItemConstructorOptions[] = [
   { label: "显示主窗口", click: showMainWindow },
   {
-    label: "管理 Open Orpheus",
+    label: "管理 Better Orpheus",
     click: () => {
       showManageWindow();
     },
@@ -46,7 +46,7 @@ const defaultIcon = createIconForDarwin(nativeImage.createFromPath(defaultIconPa
 
 const trayIcon = new Tray(defaultIcon);
 
-trayIcon.setToolTip("Open Orpheus 启动中");
+trayIcon.setToolTip("Better Orpheus 启动中");
 trayIcon.setContextMenu(Menu.buildFromTemplate(defaultMenuItems));
 trayIcon.on("click", clickHandler);
 trayIcon.on("right-click", rightClickHandler);

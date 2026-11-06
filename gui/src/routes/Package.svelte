@@ -12,7 +12,7 @@
 
 <h1 class="text-2xl font-bold">资源包</h1>
 <p class="mt-2 text-gray-700">
-  一个 Open Orpheus 版本仅为一个特定的资源包版本设计，因此推荐使用与当前 Open Orpheus
+  一个 Better Orpheus 版本仅为一个特定的资源包版本设计，因此推荐使用与当前 Better Orpheus
   版本匹配的资源包版本以获得最佳体验。
 </p>
 <p class="mt-4 text-gray-700">
@@ -35,7 +35,7 @@
     <Dialog.Header>
       <Dialog.Title>重新获取网易云音乐资源</Dialog.Title>
       <Dialog.Description
-        >更换资源需要重启 Open Orpheus。重启后可从官方下载或选择本地 EXE
+        >更换资源需要重启 Better Orpheus。重启后可从官方下载或选择本地 EXE
         安装包，失败时保留现有资源。是否继续？</Dialog.Description
       >
     </Dialog.Header>

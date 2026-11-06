@@ -1,14 +1,6 @@
-# Open Orpheus
+# Better Orpheus
 
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/YUCLing/open-orpheus/release.yml)
-[![codecov](https://codecov.io/github/YUCLing/open-orpheus/graph/badge.svg?token=H00VYAIAWJ)](https://codecov.io/github/YUCLing/open-orpheus)
-![GitHub License](https://img.shields.io/github/license/YUCLing/open-orpheus)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/YUCLing/open-orpheus/total)
-![GitHub Repo stars](https://img.shields.io/github/stars/YUCLing/open-orpheus)
-
-An open-source implementation of Netease Cloud Music's Orpheus browser host.
-
-Track the project's current dev plans at https://github.com/users/YUCLing/projects/3
+Based on Open Orpheus, with an added compatibility layer for [BetterNCM](https://github.com/std-microblock/chromatic/tree/v2).
 
 ## Features
 
@@ -19,7 +11,10 @@ Track the project's current dev plans at https://github.com/users/YUCLing/projec
   - Windows
 - Open-source
 
-What else do you expect! It just provides an environment for the original client!
+## Changes
+
+- Downgraded the client package to version 2.10.13.202675 because the 2.x plugin ecosystem is richer ~~(and I prefer the 2.x UI)~~.
+- Added a compatibility layer for BetterNCM support.
 
 ## Screenshots
 
@@ -60,50 +55,17 @@ What else do you expect! It just provides an environment for the original client
 
 ## Installation
 
-### Flathub
-
-_Automated Publish_
-
-One-click install via Flathub
-
-[![Get it on Flathub](https://flathub.org/api/badge?locale=en)](https://flathub.org/en/apps/io.github.yucling.open-orpheus)
-
-### Fedora Linux
-
-_Automated Publish_
-
-[![Copr build status](https://copr.fedorainfracloud.org/coprs/luorain/open-orpheus/package/open-orpheus/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/luorain/open-orpheus/package/open-orpheus/)
-
-You can install via the Copr repository:
-
-```sh
-dnf copr enable luorain/open-orpheus # Enable Copr repository
-dnf install open-orpheus # Install
-```
-
-### Gentoo
-
-_Maintainer: @Puqns67_
-
-Install via Gentoo-zh Overlay
-
-```sh
-eselect repository enable gentoo-zh # Enable Gentoo-zh Overlay
-emerge --sync gentoo-zh # Sync the Gentoo-zh Overlay
-emerge --ask media-sound/open-orpheus-bin # Install
-```
-
 ### Debian Linux, Flatpak, AppImage, Windows, macOS
 
 _Automated Publish_
 
-Download from [Releases](https://github.com/YUCLing/open-orpheus/releases/latest)
+Download from [Releases](https://github.com/EatKFCinMc/better-orpheus/releases/latest).
 
 ### Resources
 
 This project does not bundle some required resources because they are owned by NetEase.
 
-Open Orpheus will **automatically download** the package from NetEase's CDN on first launch if it is missing, so manual setup is usually not required. You can also manually select a local EXE installer for version 2.10.13.202675.
+Better Orpheus will **automatically download** the package from NetEase's CDN on first launch if it is missing, so manual setup is usually not required. You can also manually select a local EXE installer for version 2.10.13.202675.
 
 Resources are stored in the `package` subfolder of the data directory:
 
@@ -120,16 +82,16 @@ If the automatic download fails, you can manually copy both folders from your of
 
 - [D-Bus services](./DBUS_SERVICES_en.md)
 - [Logging configuration](./LOGGING.md)
+
 ## Credits
 
 Better Orpheus is maintained by EatKFCinMc and is based on Open Orpheus, developed by YUCLing and other contributors, and BetterNCM, developed by std-microblock.
 
 The original Open Orpheus code retains its MIT license and copyright notices. BetterNCM-related code retains the upstream GPLv3 license and original notices. The integrated version of Better Orpheus is distributed under GPLv3, and the original copyrights of each component remain with their respective rights holders.
 
-
 ## Disclaimer
 
-Open Orpheus is an independent open-source project aimed at **interoperability**. It is not affiliated with, authorized by, or endorsed by NetEase in any way.
+Better Orpheus is an independent open-source project aimed at **interoperability**. It is not affiliated with, authorized by, or endorsed by NetEase in any way.
 
 - **This project does not include or distribute any assets or code owned by NetEase.** Required resources such as `orpheus.ntpk` are the property of NetEase. Users must obtain them from a legally acquired official client installation, or allow the application to download them automatically from NetEase's official CDN on first launch.
 - **This project does not provide, encourage, or support any functionality or modification intended to bypass advertisements, paid content, membership benefits, or digital rights management (DRM) mechanisms.** Any such use is explicitly outside the scope of this project and will be actively rejected.

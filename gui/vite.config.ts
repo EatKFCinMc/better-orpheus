@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [tailwindcss(), sveltekit()],
   define: {
     __APP_VERSION__: JSON.stringify(rootPackage.version),
+    __APP_HOMEPAGE__: JSON.stringify(rootPackage.homepage),
   },
   ssr: {
     noExternal: ["@lucide/svelte", "bits-ui"],

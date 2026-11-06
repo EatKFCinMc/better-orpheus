@@ -17,7 +17,7 @@ const base: SpecOptions = {
   summary: "An open-source implementation of Orpheus",
   description: "Line one.\nLine two.",
   license: "MIT",
-  homepage: "https://github.com/YUCLing/open-orpheus",
+  homepage: "https://github.com/EatKFCinMc/better-orpheus",
   nodeVersion: "24",
   wasmBindgen: "0.2.100",
   rust: RUST_VERSION,
@@ -33,7 +33,7 @@ describe("generateSpec", () => {
     expect(spec).toContain("Release:        1");
     expect(spec).toContain("Summary:        An open-source implementation");
     expect(spec).toContain("License:        MIT");
-    expect(spec).toContain("URL:            https://github.com/YUCLing/open-orpheus");
+    expect(spec).toContain("URL:            https://github.com/EatKFCinMc/better-orpheus");
     expect(spec).toContain("Source0:        %{name}-%{version}.tar.gz");
     expect(spec).toContain("AutoReqProv:    no");
   });

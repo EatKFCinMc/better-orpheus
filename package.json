@@ -1,8 +1,8 @@
 {
-  "name": "open-orpheus",
-  "productName": "open-orpheus",
-  "version": "0.19.2",
-  "description": "An open-source implementation of Netease Cloud Music's Orpheus browser host.",
+  "name": "better-orpheus",
+  "productName": "better-orpheus",
+  "version": "0.1.0",
+  "description": "An open-source implementation of Netease Cloud Music's Orpheus browser host with BetterNCM compatibility layer.",
   "type": "module",
   "main": ".vite/build/main.js",
   "private": true,
@@ -29,11 +29,27 @@
     "e2e": "playwright test",
     "build:betterncm": "node scripts/build-betterncm.ts"
   },
+  "homepage": "https://github.com/EatKFCinMc/better-orpheus",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EatKFCinMc/better-orpheus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EatKFCinMc/better-orpheus/issues"
+  },
   "keywords": [],
   "author": {
-    "name": "YUCLing",
-    "email": "luotianyi@luotianyi.me"
+    "name": "EatKFCinMc",
+    "email": "mayoad451@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "YUCLing"
+    },
+    {
+      "name": "std-microblock"
+    }
+  ],
   "license": "GPL-3.0",
   "engines": {
     "node": ">=24.0.0"

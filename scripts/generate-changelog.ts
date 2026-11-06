@@ -31,7 +31,7 @@ if (!apiKey) throw new Error("Missing DEEPSEEK_API_KEY env var.");
 const maintainer =
   typeof pkg.author === "string"
     ? pkg.author
-    : `${pkg.author?.name ?? ""} <${pkg.author?.email ?? ""}>`;
+    : [pkg.author?.name, pkg.author?.email ? `<${pkg.author.email}>` : ""].filter(Boolean).join(" ");
 
 const notes = await readFile(notesFile, "utf-8");
 
@@ -156,7 +156,7 @@ const metainfo = await readFile(metainfoPath, "utf-8");
 const releaseBlock = formatXmlFragment(
   [
     `<release version="${version}" date="${isoDate}">`,
-    `  <url type="details">https://github.com/YUCLing/open-orpheus/releases/tag/v${version}</url>`,
+    `  <url type="details">https://github.com/EatKFCinMc/better-orpheus/releases/tag/v${version}</url>`,
     `  ${sanitizeDescription(description)}`,
     `</release>`,
   ].join("\n"),
@@ -173,7 +173,7 @@ const bullets = extractBullets(description);
 const debianPath = resolve(projectRoot, "packaging/resources/debian/changelog");
 const debian = await readFile(debianPath, "utf-8");
 const debianEntry = [
-  `open-orpheus (${version}-1) unstable; urgency=medium`,
+  `${pkg.name} (${version}-1) unstable; urgency=medium`,
   "",
   ...bullets.map((b) => `  * ${b}`),
   "",

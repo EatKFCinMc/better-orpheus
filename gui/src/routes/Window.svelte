@@ -11,7 +11,7 @@
 </script>
 
 <h1 class="text-2xl font-bold">窗口设置</h1>
-<p class="mt-2 text-gray-700">控制 Open Orpheus 的窗口管理行为。</p>
+<p class="mt-2 text-gray-700">控制 Better Orpheus 的窗口管理行为。</p>
 
 <div class="my-4">
   <h2 class="text-lg font-bold">主窗口大小限制</h2>
