@@ -1,3 +1,4 @@
+import { audioOperations } from "./audio-operations";
 import { ipcRenderer } from "electron";
 import { fireNativeCall } from "./channel";
 import Player, { AudioPlayerState } from "./Player";
@@ -60,11 +61,21 @@ player.on("load", (event) => {
 player.on("play", () => {
   // 1806160891_1B5MK7|resume|XEDKE2
   // 1806160891|pause|4RB6IY
-  fireNativeCall("audioplayer.onPlayState", player.currentId, "", AudioPlayerState.Playing);
+  fireNativeCall(
+    "audioplayer.onPlayState",
+    player.currentId,
+    audioOperations.transportId(player.currentId),
+    AudioPlayerState.Playing
+  );
 });
 
 player.on("pause", () => {
-  fireNativeCall("audioplayer.onPlayState", player.currentId, "", AudioPlayerState.Paused);
+  fireNativeCall(
+    "audioplayer.onPlayState",
+    player.currentId,
+    audioOperations.transportId(player.currentId),
+    AudioPlayerState.Paused
+  );
 });
 
 player.on("ended", () => {
@@ -116,9 +127,17 @@ player.on("error", async ({ data }) => {
 });
 
 player.on("seeked", () => {
-  fireNativeCall("audioplayer.onSeek", player.currentId, "", 0, player.currentTime);
-  notifyBuffering(true);
+  fireNativeCall(
+    "audioplayer.onSeek",
+    player.currentId,
+    audioOperations.takeSeekId(player.currentId),
+    0,
+    player.currentTime
+  );
+  notifyBuffering(false);
 });
+
+player.on("seeking", () => notifyBuffering(true));
 
 player.on("stalled", () => {
   notifyBuffering(true);
@@ -136,6 +155,9 @@ const onPlayProgress = () => {
     bufferProgress
   );
 };
+// Media events keep the UI current even when animation frames are throttled.
+player.on("timeupdate", onPlayProgress);
+
 // NCM expects onPlayProgress to be called as fast as possible during playback
 let rafId: number | null = null;
 function startProgressRaf() {

@@ -1,3 +1,4 @@
+import { audioOperations } from "../audio-operations";
 import { ipcRenderer } from "electron";
 import { player } from "../audioplayer";
 import { registerCallHandler } from "../calls";
@@ -6,6 +7,10 @@ import { AudioPlayInfo } from "../Player";
 import { toError } from "@shared/util";
 
 registerCallHandler<[string, AudioPlayInfo], void>("audioplayer.load", async (id, playInfo) => {
+  // Legacy pages identify the load operation separately from the track itself.
+  // All completion/state callbacks must echo that operation's ID.
+  playInfo = { ...playInfo, playId: id };
+  audioOperations.reset();
   LOGGER.debug(
     {
       playId: playInfo.playId,
@@ -27,14 +32,16 @@ registerCallHandler<[AudioPlayInfo], void>(
   }
 );
 
-registerCallHandler<[string], void>("audioplayer.play", async (id) => {
+registerCallHandler<[string, string], void>("audioplayer.play", async (id, opId) => {
   if (player.currentId !== id) return;
+  audioOperations.setTransport(id, opId);
   LOGGER.debug({ id }, "Audio playback requested");
   await player.play();
 });
 
-registerCallHandler<[string, string], void>("audioplayer.pause", (id) => {
+registerCallHandler<[string, string], void>("audioplayer.pause", (id, opId) => {
   if (player.currentId !== id) return;
+  audioOperations.setTransport(id, opId);
   LOGGER.debug({ id }, "Audio pause requested");
   player.pause();
 });
@@ -46,6 +53,7 @@ registerCallHandler<[string], void>("audioplayer.stop", (id) => {
 
 registerCallHandler<[string, string, number], void>("audioplayer.seek", (id, opId, time) => {
   if (player.currentId !== id) return;
+  audioOperations.setSeek(id, opId);
   player.currentTime = time;
 });
 

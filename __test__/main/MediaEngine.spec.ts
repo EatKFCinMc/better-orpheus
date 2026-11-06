@@ -5,6 +5,7 @@ import { installLoggerStub } from "../helpers/globals";
 const hoisted = vi.hoisted(() => ({
   /** Resolvers for the deletions the fake streamers are holding open. */
   deletions: new Map<string, () => void>(),
+  cached: vi.fn(),
   /** Streamers whose deletion should reject. */
   failing: new Set<string>(),
 }));
@@ -31,7 +32,7 @@ vi.mock("../../src/main/audio/OnlineStreamer", () => ({
 // Only read for progress reporting and cache-on-complete, neither of which a
 // teardown test reaches.
 vi.mock("../../src/main/window", () => ({ mainWindow: null }));
-vi.mock("../../src/main/cache", () => ({ playCacheManager: null }));
+vi.mock("../../src/main/cache", () => ({ playCacheManager: { getCachedTrack: hoisted.cached } }));
 // Only path normalization is used here.
 vi.mock("../../src/main/util/path", () => ({
   normalizePath: (value: string) => value,
@@ -52,6 +53,7 @@ function tick(): Promise<void> {
 }
 
 beforeEach(() => {
+  hoisted.cached.mockReset().mockResolvedValue(null);
   hoisted.deletions.clear();
   hoisted.failing.clear();
 });
@@ -112,4 +114,33 @@ describe("MediaEngine.dispose", () => {
 
     await expect(engine.dispose()).resolves.toBeUndefined();
   });
+});
+
+it("replays a cached track even when the original online URL is no longer usable", async () => {
+  const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const root = await mkdtemp(join(tmpdir(), "cached-replay-"));
+  try {
+    const audioPath = join(root, "audio");
+    await writeFile(audioPath, "cached-audio");
+    hoisted.cached.mockResolvedValue({
+      audioPath,
+      meta: { md5: "same", bitrate: 320000, fileSize: 12 },
+    });
+    const engine = new MediaEngine();
+    await engine.activate({
+      type: 4,
+      songId: "123",
+      bitrate: 320,
+      md5: "same",
+      musicurl: "https://expired.invalid/song",
+    } as never);
+    const response = await engine.serve(new Request("audio://audio"));
+    expect(await response.text()).toBe("cached-audio");
+    await engine.dispose();
+    expect(hoisted.deletions.size).toBe(0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

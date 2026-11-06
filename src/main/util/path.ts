@@ -1,4 +1,4 @@
-import { join, normalize, resolve, sep } from "node:path";
+import { isAbsolute, join, normalize, resolve, sep } from "node:path";
 import os from "node:os";
 
 export function normalizePath(...paths: string[]): string {
@@ -16,4 +16,10 @@ export function sanitizeRelativePath(base: string, path: string): string | false
     return false;
   }
   return resolvedPath;
+}
+
+/** Legacy Windows pages also use backslashes for absolute Linux file paths. */
+export function localFilePath(base: string, path: string): string | false {
+  const normalized = normalizePath(path);
+  return isAbsolute(normalized) ? normalized : sanitizeRelativePath(base, normalized);
 }

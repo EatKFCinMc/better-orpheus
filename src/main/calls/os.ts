@@ -1,4 +1,3 @@
-import { isAbsolute } from "node:path";
 import os from "node:os";
 import { statfs } from "node:fs/promises";
 
@@ -7,7 +6,8 @@ import { app, BrowserWindow, Notification, powerSaveBlocker, screen, shell } fro
 import { getSystemFonts } from "@open-orpheus/ui";
 
 import { fileExists } from "../util/fs";
-import { normalizePath, sanitizeRelativePath } from "../util/path";
+import { localFilePath, normalizePath } from "../util/path";
+import { data as dataDir } from "../folders";
 import { registerCallHandler } from "../calls";
 import { getADDeviceId, getDeviceId } from "../device";
 import {
@@ -19,7 +19,7 @@ import {
 } from "../shutdown";
 
 registerCallHandler<[string], [boolean]>("os.isFileExist", async (event, path) => {
-  const filePath = isAbsolute(path) ? normalizePath(path) : sanitizeRelativePath("data", path);
+  const filePath = localFilePath(dataDir, path);
   if (filePath === false) return [false];
   return [await fileExists(filePath)];
 });

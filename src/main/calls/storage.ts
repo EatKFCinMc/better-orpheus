@@ -1,4 +1,5 @@
 import { relocatedProfilePath } from "../profile-location";
+import { matchingCachedTrack, bitrateKbps } from "../cache/matching-track";
 import { registerShutdownTask } from "../lifecycle";
 import { storageWritePath, writeStorageFile, flushStorageWrites } from "../legacy-webdata";
 import { readDirectoryPreferences } from "../storage-directories";
@@ -338,6 +339,22 @@ registerCallHandler<[], void>("storage.queryCacheTracks", async (event) => {
   wnd.send("channel.call", "storage.onquerycachetracks", tracks);
   return;
 });
+
+// 2.x uses an event-based plural API, distinct from the 3.x RPC below.
+registerCallHandler<[string, { songId: string; bitrate: number; md5?: string }], void>(
+  "storage.queryNewCacheTracks",
+  async (event, taskId, query) => {
+    let tracks: CacheTrackMeta[] = [];
+    try {
+      const cached = await matchingCachedTrack(playCacheManager, query);
+      if (cached) tracks = [{ ...cached.meta, bitrate: bitrateKbps(cached.meta.bitrate) }];
+    } catch (error) {
+      LOGGER.warn({ err: toError(error) }, "Legacy cache lookup failed; using online source");
+    }
+    if (!event.sender.isDestroyed())
+      event.sender.send("channel.call", "storage.onquerynewcachetracks", taskId, tracks);
+  }
+);
 
 registerCallHandler<
   [

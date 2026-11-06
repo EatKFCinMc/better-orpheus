@@ -1,3 +1,4 @@
+import { matchingCachedTrack } from "../cache/matching-track";
 import { stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import { Readable } from "node:stream";
@@ -37,6 +38,7 @@ type MediaState = { playInfo: AudioPlayInfo } & (
  */
 export class MediaEngine {
   private state: MediaState | null = null;
+  private activation = 0;
 
   /**
    * Deletions `stop()` started but did not wait for.
@@ -76,6 +78,7 @@ export class MediaEngine {
    * completion writes the download into the play cache.
    */
   async activate(playInfo: AudioPlayInfo): Promise<void> {
+    const activation = ++this.activation;
     if (playInfo.type === 0) {
       // Local File Play
       playInfo.path = normalizePath(playInfo.path);
@@ -88,6 +91,24 @@ export class MediaEngine {
     }
     if (playInfo.type !== 4) return;
 
+    // Replays can carry an expired signed URL. Serve a matching complete cache
+    // directly instead of sending that URL back over the network.
+    try {
+      const cached = await matchingCachedTrack(playCacheManager, {
+        songId: playInfo.songId,
+        bitrate: playInfo.bitrate,
+        md5: playInfo.md5,
+      });
+      if (activation !== this.activation) return;
+      if (cached) {
+        this.state = { type: MediaType.Local, playInfo, path: cached.audioPath };
+        LOGGER.info({ songId: playInfo.songId }, "Cached media playback activated");
+        return;
+      }
+    } catch (error) {
+      LOGGER.warn({ err: toError(error) }, "Cache unavailable; using online source");
+    }
+    if (activation !== this.activation) return;
     // URL Play
     const songId = playInfo.songId;
     LOGGER.info({ songId, bitrate: playInfo.bitrate }, "Online media playback activated");
@@ -134,6 +155,7 @@ export class MediaEngine {
    * background (its file deletion must not block a fast song switch).
    */
   async stop(): Promise<void> {
+    ++this.activation;
     const current = this.state;
     this.state = null;
     if (current) {
