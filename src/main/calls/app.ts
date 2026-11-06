@@ -1,3 +1,14 @@
+import {
+  readDirectoryPreferences,
+  saveDirectoryPreference,
+  copyDownloads,
+} from "../storage-directories";
+import {
+  data as directoryData,
+  download as activeDownload,
+  cache as activeCache,
+} from "../folders";
+import { join } from "node:path";
 import os from "node:os";
 import { rm, stat, writeFile } from "node:fs/promises";
 
@@ -383,11 +394,55 @@ registerCallHandler<[string, string, "", string], void>(
     if (!wnd) return;
     const result = await dialog.showOpenDialog(wnd, {
       title,
-      defaultPath: currentDir,
+      defaultPath: currentDir ? currentDir.replaceAll("\\", "/") : app.getPath("home"),
       properties: ["openDirectory", "dontAddToRecent", "createDirectory"],
     });
     if (result.canceled) {
-      event.sender.send("channel.call", "app.onSelectDir", false, taskId);
+      event.sender.send("channel.call", "app.onselectsystemfile", false, taskId);
+      return;
+    }
+    if (process.platform === "linux" && (taskId === "download" || taskId === "cache")) {
+      try {
+        const selected = result.filePaths[0];
+        const settingsFile = join(directoryData, "storage-directories.json");
+        const previous = await readDirectoryPreferences(settingsFile);
+        const current = previous[taskId] || (taskId === "download" ? activeDownload : activeCache);
+        const confirmation = await dialog.showMessageBox(wnd, {
+          type: "question",
+          title: "更改存储目录",
+          noLink: true,
+          message: `将${taskId === "download" ? "下载" : "缓存"}目录更改为：${selected}`,
+          detail:
+            taskId === "download"
+              ? "切换后程序将重启。原目录中的音乐不会删除；可选择复制已有文件，重名或校验失败时不切换。复制期间请勿下载或修改音乐文件。"
+              : "切换后程序将重启，在新目录重新生成缓存，旧缓存保留。",
+          buttons:
+            taskId === "download"
+              ? ["仅更改以后下载的位置", "复制已有下载后切换", "取消"]
+              : ["使用新缓存目录", "取消"],
+          defaultId: 0,
+          cancelId: taskId === "download" ? 2 : 1,
+        });
+        if (confirmation.response === (taskId === "download" ? 2 : 1)) {
+          event.sender.send("channel.call", "app.onselectsystemfile", false, taskId);
+          return;
+        }
+        if (taskId === "download" && confirmation.response === 1)
+          await copyDownloads(current, selected);
+        await saveDirectoryPreference(settingsFile, taskId, selected);
+        const args = process.argv.slice(1);
+        const moveIndex = args.indexOf("--moverun");
+        if (moveIndex !== -1) args.splice(moveIndex, 3);
+        app.relaunch({ args });
+        app.quit();
+      } catch (error) {
+        await dialog.showMessageBox(wnd, {
+          type: "error",
+          title: "目录切换失败",
+          message: error instanceof Error ? error.message : String(error),
+          detail: "原目录设置未切换。原始音乐文件不会删除。",
+        });
+      }
       return;
     }
     event.sender.send("channel.call", "app.onselectsystemfile", true, taskId, result.filePaths[0]);

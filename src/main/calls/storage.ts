@@ -1,6 +1,11 @@
+import { relocatedProfilePath } from "../profile-location";
+import { matchingCachedTrack, bitrateKbps } from "../cache/matching-track";
+import { registerShutdownTask } from "../lifecycle";
+import { storageWritePath, writeStorageFile, flushStorageWrites } from "../legacy-webdata";
+import { readDirectoryPreferences } from "../storage-directories";
 import { FSWatcher, watch } from "node:fs";
-import { copyFile, cp, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, extname, join, resolve } from "node:path";
+import { copyFile, cp, mkdir, readdir, readFile, rm } from "node:fs/promises";
+import { dirname, extname, join, relative, resolve } from "node:path";
 
 import { app, dialog, Notification } from "electron";
 import mime from "mime";
@@ -26,47 +31,27 @@ import {
 } from "../cache/PlayCacheManager";
 import createCacheManager, { lyricCacheManager, playCacheManager } from "../cache";
 import { toError } from "@shared/util";
-import { commentToID3Json, ID3JsonToComment } from "../id3";
+import { ID3JsonToComment } from "../id3";
 import globalLogger from "../logger";
 
-type DownloadScannerItem = {
-  comment: string; // comment added by addid3
-  creation_time: number; // timestamp
-  last_accessed: number;
-  last_modified: number;
-  path: string; // path relative to download dir
-  size: number;
-};
+registerShutdownTask({ name: "legacy-webdata-writes", timeoutMs: 3000, run: flushStorageWrites });
 
-async function readDownloadedMusicInfo(
-  file: string,
-  base?: string
-): Promise<DownloadScannerItem | undefined> {
+import {
+  readDownloadedMusicInfo as readMusicInfo,
+  type DownloadScannerItem,
+} from "../downloaded-music";
+
+async function readDownloadedMusicInfo(file: string, base?: string) {
   const filePath = normalizePath(base ?? "", file);
-  let comment;
   try {
-    const taggedFile = await MusicFile.load(filePath);
-    const json = commentToID3Json(taggedFile.comment);
-
-    if (!json) return;
-
-    comment = json;
+    return await readMusicInfo(file, filePath);
   } catch (error) {
     globalLogger.error(
       { name: "music-info-reader", file: filePath, err: error },
-      "Error reading ID3 tags"
+      "Error reading music tags"
     );
     return;
   }
-  const statResult = await stat(filePath);
-  return {
-    comment,
-    creation_time: statResult.birthtimeMs,
-    last_accessed: statResult.atimeMs,
-    last_modified: statResult.mtimeMs,
-    path: file,
-    size: statResult.size,
-  };
 }
 
 /**
@@ -85,6 +70,28 @@ let downloadDirWatcher: FSWatcher | null = null;
 registerCallHandler<[string, string, string], [string, string]>(
   "storage.init",
   async (event, downloadDir, someNumStr, cacheDir) => {
+    const preferences = await readDirectoryPreferences(join(dataDir, "storage-directories.json"));
+    if (preferences.download)
+      preferences.download = relocatedProfilePath(preferences.download, dataDir);
+    if (preferences.cache) preferences.cache = relocatedProfilePath(preferences.cache, dataDir);
+    downloadDir = relocatedProfilePath(preferences.download || downloadDir, dataDir);
+    cacheDir = relocatedProfilePath(preferences.cache || cacheDir, dataDir);
+    if (preferences.download && !(await isWritableDir(preferences.download, true))) {
+      dialog.showErrorBox(
+        "下载目录不可写",
+        `无法写入 ${preferences.download}，请检查挂载或权限后重试。`
+      );
+      throw new Error("已配置的下载目录不可写。");
+    }
+    if (preferences.cache && !(await isWritableDir(preferences.cache, true))) {
+      dialog.showErrorBox(
+        "缓存目录不可写",
+        `无法写入 ${preferences.cache}，请检查挂载或权限后重试。`
+      );
+      throw new Error("已配置的缓存目录不可写。");
+    }
+    if (downloadDir) downloadDir = normalizePath(downloadDir);
+    if (cacheDir) cacheDir = normalizePath(cacheDir);
     if (!downloadDir || !(await isWritableDir(downloadDir, true))) {
       downloadDir = getDefaultDownloadDir();
       if (!(await isWritableDir(downloadDir, true))) {
@@ -190,21 +197,10 @@ registerCallHandler<[string, string], void>(
 registerCallHandler<[string, string, string, string, boolean, "abs" | "rel"], void>(
   "storage.savetofile",
   async (event, taskId, content, mode, path, alone, type) => {
-    let filePath: string;
-    if (type === "rel") {
-      const p = sanitizeRelativePath(dataDir, path);
-      if (p === false) {
-        throw new Error(`Forbidden file path access attempt: ${path}`);
-      }
-      filePath = p;
-    } else {
-      filePath = normalizePath(path);
-    }
-
-    await mkdir(dirname(filePath), { recursive: true });
+    const filePath = storageWritePath(dataDir, path, type);
 
     try {
-      await writeFile(filePath, content, { flag: "w" });
+      await writeStorageFile(filePath, content);
       event.sender.send("channel.call", "storage.onsavetofiledone", taskId, 0);
     } catch (error) {
       event.sender.send(
@@ -273,11 +269,6 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
       const batch: DownloadScannerItem[] = [];
       let scanned = 0;
 
-      const entries = await readdir(path, {
-        recursive: true,
-        withFileTypes: true,
-      });
-
       const flush = () => {
         if (batch.length > 0) {
           event.sender.send("channel.call", "storage.ondownloadscanner", batch.splice(0));
@@ -285,6 +276,7 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
       };
 
       try {
+        const entries = await readdir(path, { recursive, withFileTypes: true });
         for (const entry of entries) {
           if (entry.isDirectory()) {
             continue;
@@ -295,7 +287,7 @@ registerCallHandler<[string, boolean, string, number, string[]], void>(
           const fullPath = normalizePath(entry.parentPath, entry.name);
           if (excludeSet.has(fullPath)) continue;
 
-          const relToBase = fullPath.slice(path.length + 1);
+          const relToBase = relative(path, fullPath);
           const info = await readDownloadedMusicInfo(relToBase, path);
           if (!info) continue;
 
@@ -321,6 +313,22 @@ registerCallHandler<[], void>("storage.queryCacheTracks", async (event) => {
   wnd.send("channel.call", "storage.onquerycachetracks", tracks);
   return;
 });
+
+// 2.x uses an event-based plural API, distinct from the 3.x RPC below.
+registerCallHandler<[string, { songId: string; bitrate: number; md5?: string }], void>(
+  "storage.queryNewCacheTracks",
+  async (event, taskId, query) => {
+    let tracks: CacheTrackMeta[] = [];
+    try {
+      const cached = await matchingCachedTrack(playCacheManager, query);
+      if (cached) tracks = [{ ...cached.meta, bitrate: bitrateKbps(cached.meta.bitrate) }];
+    } catch (error) {
+      LOGGER.warn({ err: toError(error) }, "Legacy cache lookup failed; using online source");
+    }
+    if (!event.sender.isDestroyed())
+      event.sender.send("channel.call", "storage.onquerynewcachetracks", taskId, tracks);
+  }
+);
 
 registerCallHandler<
   [
@@ -393,7 +401,7 @@ registerCallHandler<[string, string, string], void>(
 );
 
 registerCallHandler<[string], [boolean]>("storage.testwriteable", async (event, path) => {
-  return [await isWritableDir(path)];
+  return [await isWritableDir(normalizePath(path))];
 });
 
 registerCallHandler<[string, "abs" | "rel", "", string], void>(

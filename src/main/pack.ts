@@ -1,13 +1,14 @@
-import { access, mkdir, rm, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import versions from "../../versions.json";
+import { downloadInstaller } from "./packs/download-installer";
+import { access, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { resolve, join } from "node:path";
 
-import got from "got";
 import Emittery from "emittery";
 
-import { pack as base } from "./folders";
+import { pack as base, tempDir } from "./folders";
 import type Pack from "./packs/Pack";
 
-import versions from "../../versions.json";
+import { importInstaller } from "./packs/import-installer";
 
 export const NO_WEBPACK_ERROR_MESSAGE = "No usable web pack file found";
 
@@ -29,15 +30,8 @@ async function chooseWebPackFile() {
   throw new Error(NO_WEBPACK_ERROR_MESSAGE);
 }
 
-export type DownloadPackageProgress = {
-  step: "downloading" | "extracting" | "saving" | "completed";
-  downloadedBytes?: number;
-  totalBytes?: number;
-  progress?: number;
-  file?: string;
-  fileIndex?: number;
-  fileCount?: number;
-};
+export type { ImportProgress as DownloadPackageProgress } from "./packs/import-installer";
+import type { ImportProgress as DownloadPackageProgress } from "./packs/import-installer";
 
 export type PackManagerEvents = Record<
   `${string}packloaded`,
@@ -104,113 +98,30 @@ export class PackManager extends Emittery<PackManagerEvents> {
     return (await this.once(`${pack}packloaded`, { signal })).data.pack as T;
   }
 
-  async downloadPackage(onProgress?: (progress: DownloadPackageProgress) => void) {
-    LOGGER.debug("Downloading web pack");
-    onProgress?.({
-      step: "downloading",
-      downloadedBytes: 0,
-      progress: 0,
-    });
-
-    const response = got.stream(versions.downloadUrl, {
-      throwHttpErrors: false,
-    });
-
-    let totalBytes: number | undefined;
-
-    response.once("response", (res) => {
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        response.destroy(new Error(`Failed to download web pack: ${res.statusMessage}`));
-      }
-      const contentLength = res.headers["content-length"];
-      totalBytes = contentLength ? Number.parseInt(contentLength, 10) : undefined;
-    });
-
-    const chunks: Uint8Array[] = [];
-    let downloadedBytes = 0;
-    for await (const chunk of response) {
-      const data = chunk as Uint8Array;
-      chunks.push(data);
-      downloadedBytes += data.byteLength;
-      onProgress?.({
-        step: "downloading",
-        downloadedBytes,
-        totalBytes,
-        progress: totalBytes ? downloadedBytes / totalBytes : undefined,
-      });
-    }
-
-    const buf = Buffer.concat(
-      chunks.map((chunk) => Buffer.from(chunk)),
-      downloadedBytes
-    );
-    LOGGER.info({ bytes: downloadedBytes, totalBytes }, "Web pack downloaded");
-
-    const stdoutBytes: number[] = [];
-    const sevenZip = await import("7z-wasm").then((m) =>
-      m.default({
-        stdout(charCode) {
-          stdoutBytes.push(charCode);
-        },
-      })
-    );
-
-    const stream = sevenZip.FS.open("installer.exe", "w+");
-    sevenZip.FS.write(stream, buf, 0, buf.length);
-    sevenZip.FS.close(stream);
-
-    sevenZip.callMain(["l", "installer.exe"]);
-    const stdout = new TextDecoder().decode(new Uint8Array(stdoutBytes));
-    const lines = stdout.split("\n");
-    const headerIdx = lines.findIndex((l) => /\sName\s*$/.test(l));
-    const start = headerIdx + 2;
-    const end = lines.findIndex((l, i) => i > start && /^-{3,}/.test(l));
-
-    const fileList: string[] = lines
-      .slice(start, end)
-      .map((l) => l.trim().split(/\s+/).pop()!)
-      .filter(Boolean);
-
-    onProgress?.({ step: "extracting" });
-
-    const filesToExtract = fileList.filter(
-      (v) => v.startsWith("resource/") || v.startsWith("package/")
-    );
-    if (filesToExtract.length === 0) {
-      LOGGER.warn({ entries: fileList.length }, "Web pack archive contained no package files");
-    }
-
-    sevenZip.callMain(["x", "installer.exe", ...filesToExtract]);
-
-    onProgress?.({
-      step: "saving",
-      fileCount: filesToExtract.length,
-      fileIndex: 0,
-    });
-
+  async downloadPackage(
+    onProgress?: (progress: DownloadPackageProgress) => void,
+    signal?: AbortSignal
+  ) {
+    const { net, session } = await import("electron");
+    await mkdir(tempDir, { recursive: true });
+    const temporary = await mkdtemp(join(tempDir, "installer-download-"));
     try {
-      // We want no leftovers
-      await rm(base, { recursive: true, force: true });
-    } catch {
-      /* If fails, that's okay */
+      const installer = join(temporary, "installer.exe");
+      await downloadInstaller(versions.downloadUrl, installer, onProgress, signal, (url, options) =>
+        net.fetch(typeof url === "string" ? url : url instanceof URL ? url.href : url.url, {
+          ...options,
+          headers: { "User-Agent": session.defaultSession.getUserAgent() },
+        })
+      );
+      signal?.throwIfAborted();
+      await this.importPackage(installer, onProgress);
+    } finally {
+      await rm(temporary, { recursive: true, force: true });
     }
+  }
 
-    for (const [index, file] of filesToExtract.entries()) {
-      const destPath = resolve(base, file);
-      const buf = sevenZip.FS.readFile(file);
-      await mkdir(dirname(destPath), { recursive: true }); // Ensure the directory exists
-      await writeFile(destPath, buf);
-      onProgress?.({
-        step: "saving",
-        file,
-        fileCount: filesToExtract.length,
-        fileIndex: index + 1,
-        progress: (index + 1) / filesToExtract.length,
-      });
-    }
-
-    onProgress?.({ step: "completed", progress: 1 });
-    LOGGER.info({ files: filesToExtract.length }, "Web pack installed");
+  async importPackage(installer: string, onProgress?: (progress: DownloadPackageProgress) => void) {
+    await importInstaller(installer, base, onProgress);
   }
 }
 

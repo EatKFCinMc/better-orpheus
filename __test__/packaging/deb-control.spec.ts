@@ -17,7 +17,7 @@ import {
 const pkg = {
   name: "open-orpheus",
   author: { name: "YUCLing", email: "luotianyi@luotianyi.me" },
-  homepage: "https://github.com/YUCLing/open-orpheus",
+  homepage: "https://github.com/EatKFCinMc/better-orpheus",
   description: "An open-source implementation.\nIt plays music.",
 };
 
@@ -25,7 +25,7 @@ const options: ControlOptions = {
   name: "open-orpheus",
   section: "sound",
   maintainer: "YUCLing <luotianyi@luotianyi.me>",
-  homepage: "https://github.com/YUCLing/open-orpheus",
+  homepage: "https://github.com/EatKFCinMc/better-orpheus",
   description: "An open-source implementation.\n It plays music.",
 };
 
@@ -35,7 +35,7 @@ describe("resolveControlOptions", () => {
       name: "open-orpheus",
       section: "sound",
       maintainer: "YUCLing <luotianyi@luotianyi.me>",
-      homepage: "https://github.com/YUCLing/open-orpheus",
+      homepage: "https://github.com/EatKFCinMc/better-orpheus",
       // Continuation lines get the Debian field indent.
       description: "An open-source implementation.\n It plays music.",
     });
@@ -104,7 +104,7 @@ describe("generateControl", () => {
     expect(control).toContain("Section: sound");
     expect(control).toContain("Priority: optional");
     expect(control).toContain("Maintainer: YUCLing <luotianyi@luotianyi.me>");
-    expect(control).toContain("Homepage: https://github.com/YUCLing/open-orpheus");
+    expect(control).toContain("Homepage: https://github.com/EatKFCinMc/better-orpheus");
     expect(control).toContain("Package: open-orpheus");
     expect(control).toContain("Architecture: any");
     expect(control).toContain("Description: An open-source implementation.");

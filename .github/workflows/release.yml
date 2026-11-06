@@ -194,12 +194,6 @@ jobs:
             ${{ inputs.pre_release && '--prerelease' || '' }} \
             ${{ inputs.discussion_category && format('--discussion-category "{0}"', inputs.discussion_category) || '' }}
 
-      - name: Trigger Flathub publish workflow
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run flathub.yml --ref main
-
   cleanup:
     name: Clean up draft release on failure
     needs: [prepare, build, publish]

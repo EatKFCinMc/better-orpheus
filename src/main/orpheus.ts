@@ -1,3 +1,7 @@
+import { disableClientUpdateChecks } from "./packs/client-update";
+import { parseLegacySkinPath, readLegacySkinAsset } from "./packs/legacy-skin";
+import { applyHijacks } from "./betterncm/hijacks";
+import resourceVersions from "../../versions.json";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -12,7 +16,7 @@ import WebPack from "./packs/WebPack";
 import { fileExists, isFileNotFound } from "./util/fs";
 import { selectBestMusicPic } from "./util/musicPicture";
 import { normalizePath, sanitizeRelativePath } from "./util/path";
-import { data as dataDir, storage as storageDir, wasm } from "./folders";
+import { data as dataDir, storage as storageDir, pack as packDir, wasm } from "./folders";
 import { client } from "./request";
 import { toError } from "@shared/util";
 
@@ -85,7 +89,16 @@ async function loadFromFilePath(path: string): Promise<SimpleResponse> {
   try {
     const fileContent = await packManager.getPack<WebPack>("web").readFile(path);
     const contentType = mime.getType(extname(path)) || "application/octet-stream";
-    return { content: Buffer.from(fileContent), contentType };
+    const content = /\.(?:js|html|css)$/.test(path)
+      ? Buffer.from(
+          applyHijacks(
+            `orpheus://orpheus${path.startsWith("/") ? path : "/" + path}`,
+            disableClientUpdateChecks(fileContent.toString("utf8")),
+            resourceVersions.version
+          )
+        )
+      : Buffer.from(fileContent);
+    return { content, contentType };
   } catch {
     throw new LoadError("Not Found", 404);
   }
@@ -122,6 +135,20 @@ export async function loadFromOrpheusUrl(url: string): Promise<SimpleResponse> {
   LOGGER.debug({ host: parsedUrl.hostname, path: parsedUrl.pathname }, "Routing orpheus request");
 
   switch (parsedUrl.hostname) {
+    case "skin": {
+      const asset = parseLegacySkinPath(parsedUrl.pathname);
+      if (!asset) throw new LoadError("Bad Request: Invalid legacy skin URL", 400);
+      if (asset.name === "pub")
+        return loadFromFilePath("/style/res/less/pub/" + asset.path.slice("/web/".length));
+      try {
+        return {
+          content: Buffer.from(await readLegacySkinAsset(packDir, asset.name, asset.path)),
+          contentType: mime.getType(extname(asset.path)) || "application/octet-stream",
+        };
+      } catch {
+        throw new LoadError("Skin resource not found", 404);
+      }
+    }
     case "orpheus":
       // #region orpheus://orpheus/storage/local
       if (parsedUrl.pathname === "/storage/local") {
@@ -501,12 +528,9 @@ export async function loadFromOrpheusUrl(url: string): Promise<SimpleResponse> {
         return loadFromOrpheusUrl(url);
       }
       const cacheStorage = (await import("./cache")).httpCacheStorage;
-      if (!cacheStorage) {
-        throw new LoadError("URL cache storage is unavailable", 500);
-      }
       const response = await client(url, {
         throwHttpErrors: false,
-        cache: cacheStorage,
+        ...(cacheStorage ? { cache: cacheStorage } : {}),
       });
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw new LoadError(
@@ -597,6 +621,9 @@ export default function registerOrpheusScheme(protocol: Protocol) {
         cacheable,
       } = await loadFromOrpheusUrl(request.url);
       const headers: Record<string, string> = {};
+      if (new URL(request.url).hostname === "cache") {
+        headers["Access-Control-Allow-Origin"] = "orpheus://orpheus";
+      }
       if (contentType) {
         headers["Content-Type"] = contentType;
       }

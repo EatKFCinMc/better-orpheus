@@ -4,8 +4,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import { channel } from "./preload/util";
+import { repairLegacySettings } from "./preload/legacy-settings";
 
 import "./preload/channel";
+import { bootstrapBetterNCM } from "./preload/betterncm";
 import { fireNativeCall } from "./preload/channel";
 
 import "./preload/calls/index";
@@ -22,6 +24,13 @@ const mainWorldInterface = {
   fireNativeCall,
   dragWindow: () => ipcRenderer.invoke("channel.call", "winhelper.dragWindow"),
 };
+
+if (channel === "main") {
+  // Runs synchronously before any scripts from the imported legacy pack.
+  contextBridge.executeInMainWorld({
+    func: repairLegacySettings,
+  });
+}
 
 LOGGER.debug({ channel }, "Installing main-world patches");
 contextBridge.executeInMainWorld({
@@ -69,6 +78,7 @@ contextBridge.executeInMainWorld({
       img.crossOrigin = "anonymous";
       return img;
     } as unknown as typeof Image;
+    window.Image.prototype = OriginalImage.prototype;
 
     if (channel === "main") {
       const systemFonts = new Set();
@@ -95,6 +105,10 @@ contextBridge.executeInMainWorld({
       if (originalSrcPropertyDescriptor) {
         Object.defineProperty(OriginalImage.prototype, "src", {
           set(value) {
+            if (typeof value === "string" && value.startsWith("orpheus://cache/")) {
+              // UI plugins sample artwork with canvas for dynamic theme colours.
+              this.crossOrigin = "anonymous";
+            }
             if (
               typeof value !== "string" ||
               value !== "orpheus://orpheus/storage/local?file=preview/font.png"
@@ -235,3 +249,5 @@ contextBridge.executeInMainWorld({
   },
   args: [channel, mainWorldInterface],
 });
+
+bootstrapBetterNCM();

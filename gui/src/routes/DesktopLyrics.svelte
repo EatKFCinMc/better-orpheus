@@ -28,7 +28,7 @@
 </script>
 
 <h1 class="text-2xl font-bold">桌面歌词</h1>
-<p class="mt-2 text-gray-700">深入定制 Open Orpheus 桌面歌词的行为。</p>
+<p class="mt-2 text-gray-700">深入定制 Better Orpheus 桌面歌词的行为。</p>
 
 {#await opacityPromise then}
   <div class="my-4">
@@ -57,7 +57,8 @@
     <div class="grid gap-1.5 font-normal">
       <p class="text-sm leading-none font-medium">启用桌面歌词逐行插值进度显示</p>
       <p class="text-sm text-muted-foreground">
-        启用后，当没有逐字歌词可用时，Open Orpheus 将会根据当前一行歌词时间显示当前一行歌词的进度。
+        启用后，当没有逐字歌词可用时，Better Orpheus
+        将会根据当前一行歌词时间显示当前一行歌词的进度。
       </p>
     </div>
   </Label>

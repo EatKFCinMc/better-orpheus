@@ -1,13 +1,12 @@
 import { dirname } from "node:path";
 
 import { LineMode, ShowTranslate, TextAlignType } from "@shared/types/desktop-lyrics";
-import { LyricsStore } from "@shared/types/lyrics";
 import { MiniPlayerLikeMark, MiniPlayerTogetherStatus } from "@shared/types/mini-player";
 import { mkdir, writeFile } from "node:fs/promises";
 import { registerCallHandler } from "../calls";
 import { storage as storageDir } from "../folders";
 import { lyricsDispatcher } from "../lyrics";
-import { parseLrc, parseYrc } from "../lyrics/parse";
+import { parseClientLyrics } from "../lyrics/parse";
 import { sanitizeRelativePath } from "../util/path";
 import {
   createDesktopLyricsPreview,
@@ -194,22 +193,10 @@ registerCallHandler<
   ],
   [boolean]
 >("player.setLyrics", (event, lyricContent) => {
-  const { lrc, yrc, tlrc, romalrc } = lyricContent;
-  if (!lrc.trim()) {
+  const lyrics = parseClientLyrics(lyricContent);
+  if (!lyrics) {
     lyricsDispatcher.lyrics = null;
     return [true];
-  }
-  const lyrics: LyricsStore = {
-    regular: parseLrc(lrc),
-  };
-  if (yrc.trim()) {
-    lyrics["per-word"] = parseYrc(yrc);
-  }
-  if (tlrc.trim()) {
-    lyrics.translate = parseLrc(tlrc);
-  }
-  if (romalrc.trim()) {
-    lyrics.roma = parseLrc(romalrc);
   }
   lyricsDispatcher.lyrics = lyrics;
   LOGGER.debug(

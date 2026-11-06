@@ -1,147 +1,71 @@
 <script lang="ts" module>
-  type DownloadPackageProgress = {
-    step: "downloading" | "extracting" | "saving" | "completed";
-    downloadedBytes?: number;
-    totalBytes?: number;
-    progress?: number;
-    file?: string;
-    fileIndex?: number;
-    fileCount?: number;
-  };
-
+  import { PackageDownloadReason, type ImportProgress } from "@shared/types/package-download";
+  declare const downloadPackage: (callback: (progress: ImportProgress) => void) => void;
+  declare const importPackage: (callback: (progress: ImportProgress) => void) => void;
   declare const downloadReason: PackageDownloadReason;
-  declare const downloadPackage: (callback: (progress: DownloadPackageProgress) => void) => void;
 </script>
 
 <script lang="ts">
-  import { PackageDownloadReason } from "@shared/types/package-download";
-
+  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button";
-  import FileQuestionMark from "@lucide/svelte/icons/file-question-mark";
-  import FileExclamationPoint from "@lucide/svelte/icons/file-exclamation-point";
-  import FolderSync from "@lucide/svelte/icons/folder-sync";
-  import FileClock from "@lucide/svelte/icons/file-clock";
-  import LoaderCircle from "@lucide/svelte/icons/loader-circle";
-
-  import versions from "../../../../versions.json";
-  import type { Component } from "svelte";
-
-  type Phase = "idle" | "downloading" | "extracting" | "saving";
-
-  let phase = $state<Phase>("idle");
-  let downloadProgress = $state<DownloadPackageProgress | null>(null);
-
-  // svelte-ignore non_reactive_update
-  let Icon: Component;
-  // svelte-ignore non_reactive_update
-  let title: string;
-  // svelte-ignore non_reactive_update
-  let description: string;
-  switch (downloadReason) {
-    default:
-    case PackageDownloadReason.NotFound:
-      Icon = FileQuestionMark;
-      title = "缺少包文件";
-      description = "所需的包文件缺失。是否尝试自动下载？";
-      break;
-    case PackageDownloadReason.LoadFailed:
-      Icon = FileExclamationPoint;
-      title = "加载失败";
-      description = "无法加载所需的包文件。是否尝试自动重新下载？";
-      break;
-    case PackageDownloadReason.UserRequested:
-      Icon = FolderSync;
-      title = "重新下载包文件";
-      description = "确认重新下载包文件吗？";
-      break;
-    case PackageDownloadReason.UpdateAvailable:
-      Icon = FileClock;
-      title = "包文件有变更";
-      description =
-        "该版本 Open Orpheus 已切换到另一个版本的包文件。是否自动下载并覆盖？关闭本窗口可忽略此次更新（可在管理 Open Orpheus 界面手动重新下载资源包）";
-      break;
-  }
-
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  function startDownload() {
-    phase = "downloading";
-    downloadPackage((progress) => {
-      downloadProgress = progress;
-      if (progress.step === "extracting") phase = "extracting";
-      else if (progress.step === "saving") phase = "saving";
+  let busy = $state(false);
+  let status = $state("");
+  let error = $state("");
+  let percent = $state<number | undefined>();
+  function start(manual = false) {
+    if (busy) return;
+    busy = true;
+    error = "";
+    percent = undefined;
+    status = manual ? "请选择安装包…" : "正在连接官方下载服务器…";
+    (manual ? importPackage : downloadPackage)((progress) => {
+      if (progress.step === "cancelled") {
+        busy = false;
+        status = "";
+      } else if (progress.step === "failed") {
+        busy = false;
+        status = "";
+        error = progress.error || "资源准备失败，请重试或选择本地安装包。";
+      } else if (progress.step === "downloading") {
+        percent = progress.progress;
+        const received = ((progress.receivedBytes ?? 0) / 1024 / 1024).toFixed(1);
+        const total = progress.totalBytes
+          ? ` / ${(progress.totalBytes / 1024 / 1024).toFixed(1)} MB`
+          : " MB";
+        status = `正在下载安装包：${received}${total}`;
+      } else if (progress.step === "extracting") {
+        percent = undefined;
+        status = "正在解包，请稍候…";
+      } else if (progress.step === "saving")
+        status = `正在保存资源 ${progress.fileIndex ?? 0} / ${progress.fileCount ?? 0}`;
+      else if (progress.step === "completed") status = "资源准备完成，正在启动…";
     });
   }
+  onMount(() => {
+    if (downloadReason !== PackageDownloadReason.UserRequested) start();
+  });
 </script>
 
-<div class="flex h-screen flex-col items-center justify-center gap-6 px-8">
-  {#if phase === "idle"}
-    <div class="grid grid-cols-[auto_1fr] grid-rows-2 gap-2">
-      <Icon class="row-span-2 mr-4 h-16 w-16 self-center" />
-      <h1 class="self-end text-2xl font-bold">{title}</h1>
-      <p class="max-w-96 text-gray-600">{description}</p>
-    </div>
-    <div class="text-center">
-      <Button onclick={startDownload} size="lg" class="cursor-pointer px-8">下载</Button>
-      <p class="mt-2 w-64 text-sm opacity-75">
-        将会自动下载网易云音乐 {versions.version} ({versions.build}) 的资源包（{versions.commit}）
-      </p>
-      <p class="my-4">或者</p>
-      <Button variant="link" href={versions.downloadUrl} target="_blank">手动下载安装包</Button>
-    </div>
-  {:else}
-    <div class="flex w-full max-w-sm flex-col gap-4">
-      <div class="flex items-center gap-3">
-        <LoaderCircle class="h-6 w-6 shrink-0 animate-spin text-gray-500" />
-        <span class="font-medium">
-          {#if phase === "downloading"}
-            正在下载…
-          {:else if phase === "extracting"}
-            正在解压…
-          {:else if phase === "saving"}
-            正在保存文件…
-          {/if}
-        </span>
-      </div>
-
-      {#if phase === "downloading" && downloadProgress}
-        {@const pct = downloadProgress.progress != null ? downloadProgress.progress * 100 : null}
-        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-          <div
-            class="h-2 rounded-full bg-blue-500"
-            style="width: {pct != null ? `${pct.toFixed(1)}%` : '0%'}"
-          ></div>
-        </div>
-        <div class="flex justify-between text-sm text-gray-500">
-          <span>{pct != null ? `${pct.toFixed(1)}%` : ""}</span>
-          {#if downloadProgress.totalBytes != null}
-            <span
-              >{formatBytes(downloadProgress.downloadedBytes ?? 0)} / {formatBytes(
-                downloadProgress.totalBytes
-              )}</span
-            >
-          {/if}
-        </div>
-      {:else if phase === "extracting"}
-        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-          <div class="h-2 w-full animate-pulse rounded-full bg-blue-500"></div>
-        </div>
-      {:else if phase === "saving" && downloadProgress}
-        {@const idx = (downloadProgress.fileIndex ?? 0) + 1}
-        {@const total = downloadProgress.fileCount ?? 1}
-        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
-          <div
-            class="h-2 rounded-full bg-blue-500 transition-all duration-150"
-            style="width: {((idx / total) * 100).toFixed(1)}%"
-          ></div>
-        </div>
-        <div class="text-right text-sm text-gray-500">
-          {idx} / {total} 个文件
-        </div>
-      {/if}
-    </div>
-  {/if}
+<div class="flex h-screen flex-col items-center justify-center gap-6 px-8 text-center">
+  <h1 class="text-2xl font-bold">准备网易云音乐资源</h1>
+  <p class="max-w-lg text-gray-600">
+    首次启动将从网易云官方服务器下载 2.10.13 安装包，并在本机自动提取资源。
+    程序不会运行安装包。你也可以选择已下载的官方 EXE 安装包。
+  </p>
+  <div class="flex gap-3">
+    <Button onclick={() => start()} disabled={busy} size="lg"
+      >{busy ? "处理中…" : "从官方下载"}</Button
+    >
+    <Button onclick={() => start(true)} disabled={busy} variant="outline" size="lg"
+      >选择本地安装包</Button
+    >
+  </div>
+  {#if percent !== undefined}<progress
+      class="w-full max-w-lg"
+      max="1"
+      value={percent}
+      aria-label="安装包下载进度"
+    ></progress>{/if}
+  <p role="status" aria-live="polite">{status}</p>
+  {#if error}<p role="alert" class="max-w-lg text-red-600">{error}</p>{/if}
 </div>

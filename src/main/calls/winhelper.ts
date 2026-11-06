@@ -143,6 +143,7 @@ let mainWindowSizeLimits: [SizeLimit, SizeLimit] | null = null;
 registerCallHandler<[{ x: number; y: number }, { x: number; y: number }], void>(
   "winhelper.setWindowSizeLimit",
   async (event, min, max) => {
+    if (!min || !max) return;
     const wnd = BrowserWindow.fromWebContents(event.sender);
     if (!wnd) return;
     const scaleFactor = shouldApplyScaleFactor() ? getWindowScaleFactor(wnd) : 1;

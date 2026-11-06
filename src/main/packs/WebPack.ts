@@ -92,6 +92,9 @@ export default class WebPack extends Pack {
   }
 
   async getCommitHash(): Promise<string> {
+    // Older clients (including 2.10.13) have signed packs without COMMITHASH.
+    // An unknown revision must not make an otherwise valid pack fail to load.
+    if (!Object.hasOwn(this.files, "/pub/COMMITHASH")) return "";
     const file = await this.readFile("/pub/COMMITHASH");
     const commit = file.toString("utf-8").trim();
     LOGGER.debug({ commit }, "Web pack commit hash read");

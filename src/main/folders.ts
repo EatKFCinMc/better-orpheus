@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 
 import { app } from "electron";
+import { packagedProfileLocation } from "./profile-location";
 
 export const tempDir =
   "OPEN_ORPHEUS_CUSTOM_TEMP_DIR" in process.env
@@ -14,7 +15,7 @@ export const data = resolve(
   "OPEN_ORPHEUS_CUSTOM_DATA_DIR" in process.env
     ? process.env.OPEN_ORPHEUS_CUSTOM_DATA_DIR!
     : app.isPackaged
-      ? app.getPath("userData")
+      ? packagedProfileLocation(app.getPath("appData"))
       : "data"
 );
 

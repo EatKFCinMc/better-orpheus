@@ -11,7 +11,7 @@
 
 <h1 class="text-2xl font-bold">协议处理</h1>
 <p class="mt-2 text-gray-700">
-  Open Orpheus 可以被注册为网易云音乐 URL 协议客户端，以响应网页端的唤起。
+  Better Orpheus 可以被注册为网易云音乐 URL 协议客户端，以响应网页端的唤起。
 </p>
 
 {#await isClientPromise}

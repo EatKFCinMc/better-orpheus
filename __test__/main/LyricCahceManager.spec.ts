@@ -175,3 +175,23 @@ describe("LyricCacheManager", () => {
     });
   });
 });
+
+it("persists URL cache identities across restarts without merging request options", async () => {
+  vol.reset();
+  const url = "https://music.163.com/api/song/lyric?id=123&lv=-1&tv=-1";
+  const first = newManager();
+  await first.set(url, "original + translation");
+  const second = newManager();
+  await expect(second.get(url)).resolves.toBe("original + translation");
+  await expect(second.get(url + "&rv=-1")).resolves.toBeNull();
+  await expect(second.get("123")).resolves.toBeNull();
+  expect(vol.readdirSync(CACHE_DIR)).toHaveLength(1);
+});
+it.each(["", ".", "..", "../outside", "..\\outside", "bad\0name"])(
+  "rejects unsafe cache key %j",
+  async (key) => {
+    vol.reset();
+    const cache = newManager();
+    await expect(cache.set(key, "data")).rejects.toThrow("Invalid lyric cache key");
+  }
+);

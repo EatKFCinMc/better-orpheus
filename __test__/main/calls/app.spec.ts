@@ -32,6 +32,7 @@ vi.mock("electron", () => ({
     isPackaged: false,
     getPath: vi.fn((name: string) => `/tmp/open-orpheus-test/${name}`),
     quit: vi.fn(),
+    relaunch: vi.fn(),
     setThumbarButtons: vi.fn(),
   },
   BrowserWindow: { fromWebContents: vi.fn(() => null) },
@@ -63,6 +64,9 @@ vi.mock("../../../src/main/dawn", () => ({
 }));
 vi.mock("../../../src/main/folders", () => ({
   disableHardwareAccelerationFlag: "/tmp/open-orpheus-test/flag",
+  data: "/tmp/open-orpheus-test/data",
+  download: "/tmp/open-orpheus-test/download",
+  cache: "/tmp/open-orpheus-test/cache",
 }));
 vi.mock("../../../src/main/util/fs", () => ({
   fileExists: hoisted.fileExists,
@@ -93,7 +97,7 @@ async function freshModules() {
 /** Dispatch a command and return the tuple spread onto the callback. */
 async function call(dispatcher: CallDispatcher, command: string, ...args: unknown[]) {
   const callback = vi.fn();
-  await dispatcher.dispatch(command, callback, { sender: "test" }, ...args);
+  await dispatcher.dispatch(command, callback, { sender: { send: vi.fn() } }, ...args);
   return callback.mock.calls[0] as unknown[];
 }
 
@@ -237,5 +241,49 @@ describe("app.getDefaultMusicPlayPath", () => {
     const [path] = await call(dispatcher!, "app.getDefaultMusicPlayPath");
 
     expect(path).toBeUndefined();
+  });
+});
+
+vi.mock("../../../src/main/storage-directories", () => ({
+  readDirectoryPreferences: vi.fn(async () => ({})),
+  saveDirectoryPreference: vi.fn(async () => "/tmp/selected"),
+  copyDownloads: vi.fn(async () => {}),
+}));
+describe("Linux storage directory switch", () => {
+  it("persists a chosen cache directory before restarting and does not migrate music", async () => {
+    const { dispatcher } = await freshModules();
+    const { app, BrowserWindow, dialog } = await import("electron");
+    const directories = await import("../../../src/main/storage-directories");
+    vi.clearAllMocks();
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue({} as never);
+    vi.mocked(dialog.showOpenDialog).mockResolvedValue({
+      canceled: false,
+      filePaths: ["/tmp/selected"],
+    });
+    vi.mocked(dialog.showMessageBox).mockResolvedValue({ response: 0, checkboxChecked: false });
+    await call(dispatcher!, "app.selectSystemDir", "cache", "选择缓存目录", "", "/old");
+    expect(directories.saveDirectoryPreference).toHaveBeenCalledWith(
+      expect.stringContaining("storage-directories.json"),
+      "cache",
+      "/tmp/selected"
+    );
+    expect(directories.copyDownloads).not.toHaveBeenCalled();
+    expect(app.relaunch).toHaveBeenCalledOnce();
+    expect(app.quit).toHaveBeenCalledOnce();
+  });
+  it("does not persist or restart when confirmation is cancelled", async () => {
+    const { dispatcher } = await freshModules();
+    const { app, BrowserWindow, dialog } = await import("electron");
+    const directories = await import("../../../src/main/storage-directories");
+    vi.clearAllMocks();
+    vi.mocked(BrowserWindow.fromWebContents).mockReturnValue({} as never);
+    vi.mocked(dialog.showOpenDialog).mockResolvedValue({
+      canceled: false,
+      filePaths: ["/tmp/selected"],
+    });
+    vi.mocked(dialog.showMessageBox).mockResolvedValue({ response: 2, checkboxChecked: false });
+    await call(dispatcher!, "app.selectSystemDir", "download", "选择下载目录", "", "/old");
+    expect(directories.saveDirectoryPreference).not.toHaveBeenCalled();
+    expect(app.relaunch).not.toHaveBeenCalled();
   });
 });

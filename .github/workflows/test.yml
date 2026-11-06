@@ -26,6 +26,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Initialize BetterNCM JS framework
+        run: git -C chromatic submodule update --init src/js-framework
 
       - name: Resolve pinned Rust version
         id: toolchain
@@ -91,6 +96,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Initialize BetterNCM JS framework
+        run: git -C chromatic submodule update --init src/js-framework
 
       - name: Resolve pinned Rust version
         id: toolchain
@@ -224,6 +234,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          submodules: true
+
+      - name: Initialize BetterNCM JS framework
+        run: git -C chromatic submodule update --init src/js-framework
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5

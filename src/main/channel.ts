@@ -12,6 +12,10 @@ import {
 
 import "./calls/index";
 
+ipcMain.on("channel.encryptId", (event, id: string) => {
+  event.returnValue = encodeAnonymousId(String(id)).replace(/\//g, "_").replace(/\+/g, "-");
+});
+
 ipcMain.handle("channel.call", (event, command: string, ...params: unknown[]) => {
   return new Promise((resolve) => {
     void dispatcher
@@ -30,6 +34,10 @@ ipcMain.handle("channel.call", (event, command: string, ...params: unknown[]) =>
         } else {
           LOGGER.trace({ command }, "Channel command handled");
         }
+      })
+      .catch((err: unknown) => {
+        LOGGER.error({ command, err }, "Channel command failed");
+        resolve(false);
       });
   });
 });
@@ -50,8 +58,17 @@ ipcMain.on("channel.serialData", (event, apiPath: string, body: string | object)
 });
 
 ipcMain.on("channel.deserialData", (event, hexParams: string | ArrayBuffer) => {
-  const deserialized = deserialData(hexParams);
-  event.returnValue = deserialized;
+  try {
+    // 2.x FileReader.readAsBinaryString passes Latin-1 bytes rather than hex.
+    const input =
+      typeof hexParams === "string" && !/^(?:[0-9a-f]{2})+$/i.test(hexParams)
+        ? Uint8Array.from(Buffer.from(hexParams, "latin1")).buffer
+        : hexParams;
+    event.returnValue = deserialData(input);
+  } catch (err) {
+    LOGGER.warn({ err }, "Unable to decrypt API response");
+    event.returnValue = "";
+  }
 });
 
 ipcMain.on("channel.encodeAnonymousId", (event, id: string) => {

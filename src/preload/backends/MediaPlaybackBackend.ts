@@ -11,6 +11,7 @@ export class MediaPlaybackBackend implements PlaybackBackend {
 
   private readonly element: HTMLAudioElement;
   private readonly sink: PlaybackEventSink;
+  private awaitingInitialReady = false;
 
   constructor(ctx: AudioContext, sink: PlaybackEventSink) {
     this.sink = sink;
@@ -37,14 +38,20 @@ export class MediaPlaybackBackend implements PlaybackBackend {
       element.addEventListener(name, () => this.sink(name));
     }
     element.addEventListener("error", (event) => this.sink("error", event));
-    // A real "canplay" is the media element's readiness signal.
-    element.addEventListener("canplay", () => this.sink("load"));
+    // Seeking and buffering can raise canplay again. Legacy onLoad handlers
+    // restore the saved position, so forwarding every canplay creates a seek loop.
+    element.addEventListener("canplay", () => {
+      if (!this.awaitingInitialReady) return;
+      this.awaitingInitialReady = false;
+      this.sink("load");
+    });
 
     LOGGER.debug("Media playback backend initialized");
   }
 
   load(): Promise<void> {
     LOGGER.debug("Media playback source reset for load");
+    this.awaitingInitialReady = true;
     this.element.src = `audio://audio?t=${Date.now()}`;
     this.element.load();
     return Promise.resolve();
@@ -59,6 +66,7 @@ export class MediaPlaybackBackend implements PlaybackBackend {
   }
 
   stop(): void {
+    this.awaitingInitialReady = false;
     this.element.pause();
     this.element.currentTime = 0;
     this.element.src = "";
@@ -93,6 +101,7 @@ export class MediaPlaybackBackend implements PlaybackBackend {
   }
 
   async dispose(): Promise<void> {
+    this.awaitingInitialReady = false;
     // Drop any leftover source so a stale audio://audio request can't spam.
     this.element.pause();
     this.element.removeAttribute("src");

@@ -42,6 +42,11 @@ const mainWindowOptions = {
 
 /** Wire the main window's cross-window behaviour and lifecycle. */
 function setupMainWindow(mainWindow: BrowserWindow) {
+  mainWindow.webContents.on("did-finish-load", () => {
+    void import("../betterncm")
+      .then((m) => m.injectBetterNCM(mainWindow))
+      .catch((err) => LOGGER.error({ err }, "BetterNCM startup failed"));
+  });
   ["maximize", "minimize", "restore", os.platform() === "linux" ? "resize" : "resized"].forEach(
     (event) => {
       mainWindow.on(event as unknown as "maximize", () => {

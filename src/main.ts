@@ -46,6 +46,9 @@ if (started) {
   app.quit();
 }
 
+// Set the profile before Electron creates its single-instance lock files.
+app.setPath("userData", userdataDir);
+
 // Enforce single instance
 if (!("OPEN_ORPHEUS_IGNORE_SINGLE_INSTANCE" in process.env) && !app.requestSingleInstanceLock()) {
   app.quit();
@@ -55,6 +58,16 @@ installLifecycle();
 
 // Register privileged schemes
 protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "betterncm",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: true,
+    },
+  },
   {
     scheme: "orpheus",
     privileges: {
@@ -85,8 +98,6 @@ protocol.registerSchemesAsPrivileged([
     },
   },
 ]);
-
-app.setPath("userData", userdataDir);
 
 app.setAppUserModelId("com.squirrel.OpenOrpheus.OpenOrpheus");
 
@@ -241,8 +252,8 @@ app.on("ready", async () => {
           dialog.showErrorBox(
             "Open Orpheus",
             noUsablePack
-              ? "资源包下载失败"
-              : "资源包下载失败\n可通过 Open Orpheus 管理界面重新尝试下载"
+              ? "资源包导入失败"
+              : "资源包导入失败\n可通过 Open Orpheus 管理界面重新选择安装包导入"
           );
         }
         if (noUsablePack) {
@@ -317,7 +328,9 @@ app.on("ready", async () => {
       await import("./main/settings").then((m) => m.initialize());
     });
 
+    await import("./main/legacy-webdata").then((m) => m.migrateLegacyWebdata(dataDir));
     LOGGER.info("Databases and settings initialized");
+    await import("./main/betterncm").then((m) => m.initializeBetterNCM());
 
     // Publish lyrics on D-Bus. Linux-only and fire-and-forget: the native
     // module is loaded lazily, and startup must not wait for the session bus.

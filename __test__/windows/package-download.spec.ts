@@ -38,6 +38,7 @@ async function load(...argv: string[]) {
   return {
     reason: exposed("downloadReason") as PackageDownloadReason,
     downloadPackage: exposed("downloadPackage") as (cb: (progress: Progress) => void) => void,
+    importPackage: exposed("importPackage") as (cb: (progress: Progress) => void) => void,
     /** The progress listener registered by `downloadPackage`, if any. */
     progressListener: () => hoisted.on.mock.calls[0]?.[1] as Listener,
   };
@@ -100,4 +101,10 @@ describe("package download preload", () => {
     expect(callback).toHaveBeenNthCalledWith(2, { step: "completed" });
     expect(hoisted.off).toHaveBeenCalledWith("download-package-progress", listener);
   });
+});
+
+it("retains local installer selection as an explicit fallback", async () => {
+  const { importPackage } = await load();
+  importPackage(vi.fn());
+  expect(hoisted.send).toHaveBeenCalledWith("download-package", "manual");
 });

@@ -110,3 +110,10 @@ target
 # Module Dist
 /modules/*/dist/*
 !/modules/*/dist/*.ts
+
+# Built upstream BetterNCM assets
+/assets/betterncm/
+
+# Legacy client runtime files and generated audit data
+/webdata/
+/outputs/

@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import type { BrowserWindowConstructorOptions } from "electron";
+import { dialog, type BrowserWindowConstructorOptions } from "electron";
 
 import packManager from "../pack";
 import { PackageDownloadReason } from "@shared/types/package-download";
@@ -10,7 +10,7 @@ import { toError } from "@shared/util";
 const packageDownloadWindowOptions = {
   width: 1000,
   height: 600,
-  title: "Open Orpheus",
+  title: "Better Orpheus",
   show: true,
   frame: true,
   webPreferences: {
@@ -57,53 +57,47 @@ class PackageDownloadWindow extends ManagedWindow {
 
     return new Promise<void>((resolve, reject) => {
       let downloadSuccess = false;
-      let downloadFailed = false;
-      let lastProgressStep: string | undefined;
-      wnd.webContents.ipc.on("download-package", () => {
-        LOGGER.info({ downloadReason: reasonName }, "Package download started");
-        packManager
-          .downloadPackage((progress) => {
-            wnd.webContents.send("download-package-progress", progress);
-            if (progress.step !== lastProgressStep) {
-              lastProgressStep = progress.step;
-              if (progress.step === "completed") {
-                LOGGER.info({ downloadReason: reasonName }, "Package download completed");
-              } else {
-                LOGGER.debug(
-                  {
-                    step: progress.step,
-                    downloadedBytes: progress.downloadedBytes,
-                    totalBytes: progress.totalBytes,
-                  },
-                  "Package download progressed"
-                );
-              }
+      let importing = false;
+      const controller = new AbortController();
+      wnd.webContents.ipc.on("download-package", async (_event, source?: string) => {
+        if (importing) return;
+        importing = true;
+        try {
+          const report = (progress: import("@shared/types/package-download").ImportProgress) => {
+            if (!wnd.isDestroyed()) wnd.webContents.send("download-package-progress", progress);
+          };
+          if (source === "manual") {
+            const result = await dialog.showOpenDialog(wnd, {
+              title: "选择网易云音乐安装包",
+              properties: ["openFile"],
+              filters: [{ name: "网易云音乐 Windows 安装包", extensions: ["exe"] }],
+            });
+            if (wnd.isDestroyed()) return;
+            if (result.canceled || !result.filePaths[0]) {
+              report({ step: "cancelled" });
+              return;
             }
-            if (progress.step === "completed") {
-              downloadSuccess = true;
-              resolve();
-              wnd.close();
-            }
-          })
-          .catch((e) => {
-            downloadFailed = true;
-            if (noUsablePack) {
-              LOGGER.fatal(
-                { err: toError(e), downloadReason: reasonName },
-                "No usable web pack and package download failed; exiting"
-              );
-            } else {
-              LOGGER.error(
-                { err: toError(e), downloadReason: reasonName },
-                "Failed to download package"
-              );
-            }
-            reject(e);
-            wnd.close();
-          });
+            await packManager.importPackage(result.filePaths[0], report);
+          } else {
+            await packManager.downloadPackage(report, controller.signal);
+          }
+          downloadSuccess = true;
+          resolve();
+          if (!wnd.isDestroyed()) wnd.close();
+        } catch (error) {
+          LOGGER.error({ err: toError(error) }, "Resource import failed");
+          if (!wnd.isDestroyed())
+            wnd.webContents.send("download-package-progress", {
+              step: "failed",
+              error: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+          importing = false;
+        }
       });
       wnd.on("closed", () => {
-        if (downloadSuccess || downloadFailed) return;
+        controller.abort();
+        if (downloadSuccess) return;
         if (noUsablePack) {
           LOGGER.fatal(
             { downloadReason: reasonName },
