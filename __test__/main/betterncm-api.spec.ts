@@ -2,6 +2,7 @@ import { beforeAll, afterAll, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { createContext, runInContext } from "node:vm";
 import { zipSync, strToU8 } from "fflate";
 import { installLoggerStub } from "../helpers/globals";
 const state = vi.hoisted(() => ({
@@ -35,7 +36,7 @@ vi.mock("node:fs", async () => {
         : actual.copyFileSync(src, dest),
     readFileSync: (path: any, options: any) =>
       String(path).endsWith("framework.js")
-        ? "void 0;"
+        ? "window.bootstrapRuns = (window.bootstrapRuns || 0) + 1;"
         : String(path).endsWith("framework.css")
           ? Buffer.from(".fixture{}")
           : actual.readFileSync(path, options),
@@ -114,14 +115,35 @@ beforeAll(async () => {
   fs.writeFileSync(join(root, "config.json"), "{broken");
   host = await import("../../src/main/betterncm");
   await host.initializeBetterNCM();
-  await host.injectBetterNCM({ webContents: state.wc } as never);
-  key = JSON.parse(
-    state.wc.executeJavaScript.mock.calls
-      .find((call) => call[0].includes("window.BETTERNCM_API_KEY="))![0]
-      .match(/BETTERNCM_API_KEY=("[^"]+")/)[1]
-  );
+  key = native("internal.bootstrap", "false").key;
 });
 afterAll(() => fs.rmSync(temp, { recursive: true, force: true }));
+it("runs the serialized fallback in the page world and skips an already started page", async () => {
+  const page = {
+    bootstrapRuns: 0,
+    BETTERNCM_API_KEY: "",
+    BETTERNCM_API_PATH: "",
+    BETTERNCM_FILES_PATH: "",
+    __betterNCMStarted: false,
+  };
+  const context = createContext({
+    window: page,
+    localStorage: { getItem: () => null },
+  });
+  const executeJavaScript = vi.fn(async (source: string) => runInContext(source, context));
+  const window = { webContents: { executeJavaScript } } as never;
+  await host.injectBetterNCM(window);
+  await host.injectBetterNCM(window);
+
+  expect(executeJavaScript).toHaveBeenCalledTimes(3);
+  expect(page).toMatchObject({
+    bootstrapRuns: 1,
+    BETTERNCM_API_KEY: key,
+    BETTERNCM_API_PATH: "betterncm://runtime/api",
+    BETTERNCM_FILES_PATH: "betterncm://runtime/local",
+    __betterNCMStarted: true,
+  });
+});
 it("checks authentication, main frame, exact document and unknown APIs", async () => {
   expect((await state.route(new Request("betterncm://runtime/api/app/version"))).status).toBe(401);
   expect((await state.route(new Request("betterncm://other/api/app/version"))).status).toBe(404);

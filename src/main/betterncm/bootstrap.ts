@@ -7,7 +7,13 @@ import { setHijackPlugins } from "./hijacks";
 import { root, assets, config, token } from "./host";
 import { refreshHijacks } from "./plugin-runtime";
 
-export function bootstrapPayload(safeMode = false) {
+import {
+  readBetterNCMPageState,
+  startBetterNCMInPage,
+  type BetterNCMBootstrapPayload,
+} from "@shared/betterncm-bootstrap";
+
+export function bootstrapPayload(safeMode = false): BetterNCMBootstrapPayload {
   if (safeMode) setHijackPlugins([]);
   else refreshHijacks();
   return {
@@ -21,16 +27,10 @@ export function bootstrapPayload(safeMode = false) {
 }
 export async function injectBetterNCM(wnd: BrowserWindow) {
   // Fallback for a preload failure; normal startup happens before page scripts.
-  const state = await wnd.webContents.executeJavaScript(
-    '({started:Boolean(window.__betterNCMStarted),safe:localStorage.getItem("betterncm.safemode")==="true"})'
-  );
+  const state = await wnd.webContents.executeJavaScript(`(${readBetterNCMPageState.toString()})()`);
   if (state?.started) return;
   const payload = bootstrapPayload(Boolean(state?.safe));
-  await wnd.webContents.executeJavaScript(`if (!window.__betterNCMStarted) {
-    window.BETTERNCM_API_KEY=${JSON.stringify(payload.key)};
-    window.BETTERNCM_API_PORT=0;
-    window.BETTERNCM_API_PATH='betterncm://runtime/api';
-    window.BETTERNCM_FILES_PATH='betterncm://runtime/local';
-    window.__betterNCMStartupScripts=${JSON.stringify(payload.startupScripts)};
-    ${payload.source}\n window.__betterNCMStarted = true; }`);
+  await wnd.webContents.executeJavaScript(
+    `(${startBetterNCMInPage.toString()})(${JSON.stringify(payload)})`
+  );
 }

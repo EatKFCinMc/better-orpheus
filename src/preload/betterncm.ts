@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { startBetterNCMInPage, type BetterNCMBootstrapPayload } from "@shared/betterncm-bootstrap";
 import { channel } from "./util";
 import { createBetterNCMBridge } from "./betterncm-bridge";
 if (channel === "main") {
@@ -20,23 +21,13 @@ export function bootstrapBetterNCM() {
   try {
     const result = ipcRenderer.sendSync("betterncm.native", "internal.bootstrap", [
       String(localStorage.getItem("betterncm.safemode") === "true"),
-    ]);
+    ]) as
+      | { value: BetterNCMBootstrapPayload; error?: never }
+      | { error: string; value?: never }
+      | undefined;
     if (!result || result.error) throw new Error(result?.error || "BetterNCM host unavailable");
     contextBridge.executeInMainWorld({
-      func: (payload: { source: string; key: string; startupScripts: unknown[] }) => {
-        if ((window as any).__betterNCMStarted) return;
-        Object.assign(window, {
-          BETTERNCM_API_KEY: payload.key,
-          BETTERNCM_API_PORT: 0,
-          BETTERNCM_API_PATH: "betterncm://runtime/api",
-          BETTERNCM_FILES_PATH: "betterncm://runtime/local",
-          __betterNCMStartupScripts: payload.startupScripts,
-        });
-        // Execute the bundled framework in the page realm before its own scripts.
-        // oxlint-disable-next-line eslint/no-eval
-        (0, eval)(payload.source);
-        (window as any).__betterNCMStarted = true;
-      },
+      func: startBetterNCMInPage,
       args: [result.value],
     });
   } catch (error) {
