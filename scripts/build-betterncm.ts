@@ -35,11 +35,9 @@ await build({
           })
         );
         build.onLoad({ filter: /js-framework\/src\/loader\.ts$/ }, async (args) => ({
-          contents: transformLoader(
-            await readFile(args.path, "utf8"),
-            await readFile("src/betterncm/loader-function.txt", "utf8")
-          ),
+          contents: transformLoader(await readFile(args.path, "utf8")),
           loader: "ts",
+          resolveDir: resolve(args.path, ".."),
         }));
         build.onLoad(
           { filter: /js-framework\/src\/plugin-manager\/index\.tsx$/ },

@@ -12,7 +12,7 @@ function replaceRequired(
   if (updated === source) throw new Error(`BetterNCM upstream changed: cannot apply ${label}`);
   return updated;
 }
-export function transformLoader(source: string, loader: string): string {
+export function transformLoader(source: string): string {
   source = replaceRequired(
     source,
     /export async function enableSafeMode\(\) \{\s*return;/,
@@ -25,11 +25,30 @@ export function transformLoader(source: string, loader: string): string {
     'window.addEventListener("betterncm-ready",',
     "startup lifecycle"
   );
-  return replaceRequired(
+  const adapted = replaceRequired(
     source,
     /async function loadPlugins\(\) \{[\s\S]*?(?=async function onLoadError)/,
-    () => loader + "\n",
+    `function loadPlugins() {
+  return loadCompatiblePlugins({
+    page: window,
+    loadedPlugins,
+    isSafeMode,
+    fs: betterncm_native.fs,
+    getNCMVersion: () => betterncm.ncm.getNCMVersion(),
+    debounce: (callback, delay) => betterncm.utils.debounce(callback, delay),
+    reload: () => betterncm.reload(),
+    NCMPlugin,
+    NCMInjectPlugin,
+    onPluginLoaded,
+  });
+}
+
+`,
     "isolated plugin loader"
+  );
+  return (
+    'import { loadPlugins as loadCompatiblePlugins } from "../../../../src/betterncm/loader";\n' +
+    adapted
   );
 }
 export function transformPlugin(source: string): string {

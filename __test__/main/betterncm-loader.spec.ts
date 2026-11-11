@@ -1,5 +1,13 @@
 import { it, expect, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { loadPlugins } from "../../src/betterncm/loader";
+
+const loaderDefaults = {
+  isSafeMode: () => false,
+  getNCMVersion: () => "2.10.13",
+  debounce: (callback: () => void) => callback,
+  reload: () => {},
+  onPluginLoaded: () => {},
+};
 it("isolates broken and native plugins while loading dependencies before healthy dependants", async () => {
   vi.useFakeTimers();
   const manifests: Record<string, object> = {
@@ -35,11 +43,11 @@ it("isolates broken and native plugins while loading dependencies before healthy
   const host = {
     betterNCMPluginErrors: {},
     betterNCMSatisfies: () => true,
+    location: { pathname: "/pub/app.html" },
   };
-  vi.stubGlobal("window", host);
-  vi.stubGlobal("location", { pathname: "/pub/app.html" });
   const native = {
     fs: {
+      watchDirectory: () => {},
       readDir: (folder: string) =>
         folder === "plugins_runtime"
           ? Object.keys(manifests).map((n) => `plugins_runtime/${n}`)
@@ -51,39 +59,29 @@ it("isolates broken and native plugins while loading dependencies before healthy
     },
   };
   try {
-    const source = readFileSync("src/betterncm/loader-function.txt", "utf8");
-    const run = new Function(
-      "loadedPlugins",
-      "isSafeMode",
-      "betterncm_native",
-      "betterncm",
-      "NCMPlugin",
-      "NCMInjectPlugin",
-      "onPluginLoaded",
-      source + "; return loadPlugins();"
-    );
-    await run(
-      loaded,
-      () => false,
-      native,
-      { ncm: { getNCMVersion: () => "2.10.13" } },
-      Main,
-      Inject,
-      () => {}
-    );
+    await loadPlugins({
+      ...loaderDefaults,
+      page: host,
+      loadedPlugins: loaded,
+      fs: native.fs,
+      NCMPlugin: Main,
+      NCMInjectPlugin: Inject,
+    });
     expect(Object.keys(loaded).sort()).toEqual(["Base", "Dependant", "OptionalBase", "OptionalUI"]);
     expect(order.indexOf("Base")).toBeLessThan(order.indexOf("Dependant"));
     expect(Object.keys(host.betterNCMPluginErrors).sort()).toEqual(["Broken", "Missing", "Native"]);
     vi.runOnlyPendingTimers();
   } finally {
     vi.useRealTimers();
-    vi.unstubAllGlobals();
   }
 });
 it("times out an unresolved plugin script without blocking the next plugin", async () => {
   vi.useFakeTimers();
-  vi.stubGlobal("window", { betterNCMSatisfies: () => true });
-  vi.stubGlobal("location", { pathname: "/pub/app.html" });
+  const page = {
+    betterNCMSatisfies: () => true,
+    betterNCMPluginErrors: {} as Record<string, string>,
+    location: { pathname: "/pub/app.html" },
+  };
   class Main {
     injects = [];
     constructor(public manifest: any) {}
@@ -94,6 +92,7 @@ it("times out an unresolved plugin script without blocking the next plugin", asy
   }
   const loaded: Record<string, any> = {};
   const fs = {
+    watchDirectory: () => {},
     readDir: (folder: string) => (folder === "plugins_runtime" ? ["Slow", "Healthy"] : []),
     readFileText: (path: string) =>
       path.endsWith("manifest.json")
@@ -102,35 +101,21 @@ it("times out an unresolved plugin script without blocking the next plugin", asy
           ? "await new Promise(()=>{});"
           : "",
   };
-  // The fixture executes the same loader script supplied to the framework build.
-  // oxlint-disable-next-line typescript/no-implied-eval
-  const run = new Function(
-    "loadedPlugins",
-    "isSafeMode",
-    "betterncm_native",
-    "betterncm",
-    "NCMPlugin",
-    "NCMInjectPlugin",
-    "onPluginLoaded",
-    readFileSync("src/betterncm/loader-function.txt", "utf8") + ";return loadPlugins();"
-  );
   try {
-    const pending = run(
-      loaded,
-      () => false,
-      { fs },
-      { ncm: { getNCMVersion: () => "2.10.13" } },
-      Main,
-      Inject,
-      () => {}
-    );
+    const pending = loadPlugins({
+      ...loaderDefaults,
+      page,
+      loadedPlugins: loaded,
+      fs,
+      NCMPlugin: Main,
+      NCMInjectPlugin: Inject,
+    });
     await vi.advanceTimersByTimeAsync(10010);
     await pending;
     expect(loaded.Healthy).toBeDefined();
-    expect((window as any).betterNCMPluginErrors.Slow).toMatch(/script startup timed out/);
+    expect(page.betterNCMPluginErrors.Slow).toMatch(/script startup timed out/);
   } finally {
     vi.clearAllTimers();
     vi.useRealTimers();
-    vi.unstubAllGlobals();
   }
 });
