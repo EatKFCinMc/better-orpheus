@@ -5,16 +5,18 @@ import {
   transformPlugin,
   transformPluginManager,
 } from "../../scripts/betterncm/upstream-transforms";
-it("applies compatibility changes to the pinned upstream and preserves literal replacement characters", () => {
+it("wires the local loader into the pinned upstream lifecycle", () => {
   const source = readFileSync("chromatic/src/js-framework/src/loader.ts", "utf8");
-  const loader = readFileSync("src/betterncm/loader-function.txt", "utf8") + "\n// $& $` $'";
-  expect(transformLoader(source, loader)).toContain(loader);
+  const adapted = transformLoader(source);
+  expect(adapted).toContain('from "../../../../src/betterncm/loader"');
+  expect(adapted).toContain("return loadCompatiblePlugins({");
+  expect(adapted).toContain('window.addEventListener("betterncm-ready",');
   expect(
     transformPlugin(readFileSync("chromatic/src/js-framework/src/plugin.ts", "utf8"))
   ).toContain("__pendingLoads");
 });
 it("fails explicitly when upstream hooks disappear instead of silently producing an incompatible build", () => {
-  expect(() => transformLoader("changed upstream", "loader")).toThrow("upstream changed");
+  expect(() => transformLoader("changed upstream")).toThrow("upstream changed");
   expect(() => transformPlugin("changed upstream")).toThrow("upstream changed");
 });
 
