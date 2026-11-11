@@ -40,7 +40,7 @@ export function dbToGain(db: number): number {
 }
 
 /**
- * Convert volume (0-1) to linear gain, logarithmic mapping.
+ * Convert volume (0-1) to linear gain with gentler attenuation near full volume.
  *
  * @param input
  * @returns
@@ -48,8 +48,8 @@ export function dbToGain(db: number): number {
 export function volumeToGain(input: number, minDb = 40) {
   if (input === 0) return 0;
 
-  // Convert volume to dB (negative = attenuation)
-  const db = -minDb * (1 - input);
+  // Convert the distance from full volume to negative dB using a power curve.
+  const db = -minDb * (1 - input) ** 2.5;
 
   return dbToGain(db);
 }
