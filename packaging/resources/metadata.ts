@@ -50,7 +50,7 @@ export interface Metadata {
 }
 
 export const metadata: Metadata = {
-  appId: "io.github.yucling.open-orpheus",
+  appId: "io.github.eatkfcinmc.better-orpheus",
   homepage: "https://github.com/EatKFCinMc/better-orpheus",
   summary: "An open-source Netease Cloud Music client",
   description:

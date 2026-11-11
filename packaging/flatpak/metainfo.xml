@@ -36,7 +36,7 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">better-orpheus.desktop</launchable>
+  <launchable type="desktop-id">io.github.eatkfcinmc.better-orpheus.desktop</launchable>
 
   <branding>
     <color type="primary" scheme_preference="light">#5A9EF5</color>

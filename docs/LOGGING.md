@@ -100,7 +100,7 @@ Flatpak:
 ```sh
 flatpak run \
   --env=OPEN_ORPHEUS_LOG_LEVEL=debug \
-  io.github.yucling.open-orpheus
+  io.github.eatkfcinmc.better-orpheus
 ```
 
 Windows PowerShell:
