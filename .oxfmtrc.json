@@ -9,6 +9,8 @@
   },
   "svelte": {},
   "ignorePatterns": [
+    // Upstream BetterNCM submodule
+    "chromatic/**",
     // Package Managers
     "package-lock.json",
     "pnpm-lock.yaml",
