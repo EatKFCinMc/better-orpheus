@@ -55,7 +55,8 @@ const protocol = [
   test: "__test__/main/betterncm-api.spec.ts; endpoint coverage guard",
 }));
 const matrix = {
-  scope: "chromatic v2 declared SDK/native/protocol contracts; Linux Open Orpheus 2.10.13",
+  scope:
+    "chromatic v2 declared SDK/native/protocol contracts; Better Orpheus on Linux, NetEase Cloud Music 2.10.13",
   sdk,
   native,
   protocol,

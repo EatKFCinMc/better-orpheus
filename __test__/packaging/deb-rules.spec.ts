@@ -11,7 +11,7 @@ import { createRulesFile, generateRules, type RulesOptions } from "../../packagi
 import { RUST_VERSION } from "../../packaging/common/toolchain";
 
 const base: RulesOptions = {
-  name: "open-orpheus",
+  name: "better-orpheus",
   rust: RUST_VERSION,
 };
 
@@ -37,10 +37,12 @@ describe("generateRules", () => {
     expect(rules).not.toContain("ziglang.org");
   });
 
-  it("interpolates the package name into the scaffolder call", async () => {
+  it("uses the same package name for the scaffold and installation paths", async () => {
     const rules = await generateRules({ ...base, name: "my-app" });
 
     expect(rules).toContain("node scripts/build-scaffold.ts rpm-scaffold --name my-app");
+    expect(rules).toContain("cp -r out/my-app-linux-*/. debian/my-app/usr/lib/my-app/");
+    expect(rules).toContain("chmod 4755 debian/my-app/usr/lib/my-app/chrome-sandbox");
   });
 
   it("skips the toolchain when installTools is false", async () => {
@@ -65,8 +67,8 @@ describe("generateRules", () => {
     expect(rules).not.toContain("pnpm run package");
     expect(rules).not.toContain("sh.rustup.rs");
     expect(rules).not.toContain("rpm-scaffold");
-    expect(rules).toContain("cp -r prebuilt/scaffold/usr debian/open-orpheus/");
-    expect(rules).toContain("cp -r prebuilt/app/. debian/open-orpheus/usr/lib/open-orpheus/");
+    expect(rules).toContain("cp -r prebuilt/scaffold/usr debian/better-orpheus/");
+    expect(rules).toContain("cp -r prebuilt/app/. debian/better-orpheus/usr/lib/better-orpheus/");
   });
 
   it("keeps the SUID sandbox and no-strip overrides in every mode", async () => {

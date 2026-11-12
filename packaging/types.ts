@@ -36,9 +36,9 @@ export interface MakerRpmOptions {
  * a prebuilt-aware Flathub builder manifest and bundles it into a `.flatpak`.
  */
 export interface MakerFlatpakOptions {
-  /** Flatpak app ID (reverse-DNS, e.g. `io.github.yucling.open-orpheus`). Required: without it the manifest has no `app-id`. */
+  /** Flatpak app ID (reverse-DNS, e.g. `io.github.eatkfcinmc.better-orpheus`). Required: without it the manifest has no `app-id`. */
   id: string;
-  /** Executable/app name (e.g. `open-orpheus`). Defaults to package.json `name`. */
+  /** Executable/app name (e.g. `better-orpheus`). Defaults to package.json `name`. */
   name?: string;
   /** Empty the maker's output directory (`out/make/flatpak/<arch>`) before building. Defaults to true. */
   clean?: boolean;
@@ -60,7 +60,7 @@ export interface MakerFlatpakOptions {
  * with the system `mksquashfs` and prepends the AppImage type-2 runtime.
  */
 export interface MakerAppImageOptions {
-  /** Executable/app name (e.g. `open-orpheus`): the AppDir layout (`usr/lib/<name>`), the icon basename and the desktop entry's `Exec`/`Icon`. Defaults to package.json `name`. */
+  /** Executable/app name (e.g. `better-orpheus`): the AppDir layout (`usr/lib/<name>`), the icon basename and the desktop entry's `Exec`/`Icon`. Defaults to package.json `name`. */
   name?: string;
   /** Empty the maker's output directory (`out/make/AppImage/<arch>`) before building. Defaults to true. */
   clean?: boolean;

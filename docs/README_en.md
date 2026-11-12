@@ -1,6 +1,6 @@
 # Better Orpheus
 
-Based on Open Orpheus, with an added compatibility layer for [BetterNCM](https://github.com/std-microblock/chromatic/tree/v2).
+Better Orpheus is a fork of [Open Orpheus](https://github.com/YUCLing/open-orpheus) maintained by EatKFCinMc. It includes a compatibility layer for [BetterNCM](https://github.com/std-microblock/chromatic/tree/v2).
 
 ## Features
 

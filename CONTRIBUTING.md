@@ -1,8 +1,8 @@
-# 参与贡献 Open Orpheus
+# 参与贡献 Better Orpheus
 
 [English Version](docs/CONTRIBUTING_en.md)
 
-首先，感谢你愿意花时间为 Open Orpheus 做贡献！不论是提交 issue、改进文档还是贡献代码，每一份帮助都十分珍贵。
+首先，感谢你愿意花时间为 Better Orpheus 做贡献！不论是提交 issue、改进文档还是贡献代码，每一份帮助都十分珍贵。
 
 ## 目录
 
@@ -14,11 +14,11 @@
 
 ## 行为准则
 
-请保持友好、包容的交流态度。我们希望 Open Orpheus 对所有人都是一个友好的开源社区。详见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
+请保持友好、包容的交流态度。我们希望 Better Orpheus 对所有人都是一个友好的开源社区。详见 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
 
 ## 项目概览
 
-Open Orpheus 是一个基于 Electron 打造的网易云音乐 Orpheus 浏览器宿主。它并不篡改或重新实现客户端逻辑，而是为原版 Orpheus Web 应用提供一个跨平台的运行环境，重点关注**互操作性**。
+Better Orpheus 是一个基于 Electron 打造的网易云音乐 Orpheus 浏览器宿主。它并不篡改或重新实现客户端逻辑，而是为原版 Orpheus Web 应用提供一个跨平台的运行环境，重点关注**互操作性**。
 
 ### 技术栈
 
@@ -33,7 +33,7 @@ Open Orpheus 是一个基于 Electron 打造的网易云音乐 Orpheus 浏览器
 ### 目录结构
 
 ```
-open-orpheus/
+better-orpheus/
 ├── src/                    # Electron 主进程 & preload
 │   ├── main.ts             # 应用入口，单实例锁，协议注册
 │   ├── preload.ts          # 渲染进程桥接入口
@@ -122,7 +122,7 @@ flowchart TB
 
 ### 关键概念
 
-- **Pack 包**：网易的 `.ntpk` / `.pack` 资源格式，包含 HTML、JS、CSS、图片等 Orpheus 运行时资源。Open Orpheus 启动时自动从网易 CDN 下载，存放在 `{userData}/package/`。
+- **Pack 包**：网易的 `.ntpk` / `.pack` 资源格式，包含 HTML、JS、CSS、图片等 Orpheus 运行时资源。Better Orpheus 启动时自动从网易 CDN 下载，存放在 `{userData}/package/`。
 - **自定义协议**：项目注册了三个特权 scheme —— `orpheus://`（Web 应用本体）、`gui://`（Svelte 辅助 UI）、`audio://`（音频流），均支持 Fetch API 和 CORS。
 - **菜单渲染**：右键菜单使用 Electron BrowserWindow（无边框、透明、置顶）加载 `gui://frontend/menu` 路由。非 Wayland 环境使用定位弹窗；Wayland 下因协议限制，使用全屏透明覆盖层 + 光标捕获方案。
 
@@ -136,7 +136,7 @@ Issue 是反馈 Bug、提出功能建议或讨论项目方向的主要渠道。�
 
 - **操作系统及版本**（如 Fedora 42、Windows 11）
 - **桌面环境** （如果是 Linux 操作系统）
-- **Open Orpheus 版本**
+- **Better Orpheus 版本**
 - **复现步骤**：能稳定复现的最小步骤
 - **预期行为** vs **实际行为**
 - **相关日志或截图**（如有）
@@ -182,7 +182,7 @@ rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
 ```
 
-根项目这边的工作流和普通的 Electron Forge 项目差不多，不过 Open Orpheus 自己有一些原生模块，所以还得多做几步配置。
+根项目这边的工作流和普通的 Electron Forge 项目差不多，不过 Better Orpheus 自己有一些原生模块，所以还得多做几步配置。
 
 下面的步骤默认使用 `pnpm` 作为 Node 的包管理器，我们不建议使用其他包管理器。
 
@@ -196,7 +196,7 @@ pnpm install
 
 ### 构建模块
 
-`modules` 文件夹里有几个 Open Orpheus 运行所需的原生模块。
+`modules` 文件夹里有几个 Better Orpheus 运行所需的原生模块。
 
 在根目录执行：
 

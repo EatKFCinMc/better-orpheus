@@ -1,6 +1,6 @@
 # D-Bus Services
 
-On Linux, Open Orpheus publishes read-only D-Bus services on the session bus so external lyric displays, desktop widgets, and scripts can read the current lyrics and track information. The service is registered when the app starts; there is no extra toggle.
+On Linux, Better Orpheus publishes read-only D-Bus services on the session bus so external lyric displays, desktop widgets, and scripts can read the current lyrics and track information. The service is registered when the app starts; there is no extra toggle.
 
 > Runtime introspection is the authoritative interface definition. This document and the XML snapshot checked into the repository are for reading and code generation only. If they disagree with the running service, trust runtime introspection.
 

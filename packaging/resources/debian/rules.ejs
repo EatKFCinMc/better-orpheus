@@ -43,15 +43,15 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	set -e
-	mkdir -p debian/open-orpheus/usr
+	mkdir -p debian/<%- name %>/usr
 <% if (prebuilt) { %>
-	cp -r prebuilt/scaffold/usr debian/open-orpheus/
-	mkdir -p debian/open-orpheus/usr/lib/open-orpheus
-	cp -r prebuilt/app/. debian/open-orpheus/usr/lib/open-orpheus/
+	cp -r prebuilt/scaffold/usr debian/<%- name %>/
+	mkdir -p debian/<%- name %>/usr/lib/<%- name %>
+	cp -r prebuilt/app/. debian/<%- name %>/usr/lib/<%- name %>/
 <% } else { %>
-	cp -r rpm-scaffold/usr debian/open-orpheus/
-	mkdir -p debian/open-orpheus/usr/lib/open-orpheus
-	cp -r out/open-orpheus-linux-*/. debian/open-orpheus/usr/lib/open-orpheus/
+	cp -r rpm-scaffold/usr debian/<%- name %>/
+	mkdir -p debian/<%- name %>/usr/lib/<%- name %>
+	cp -r out/<%- name %>-linux-*/. debian/<%- name %>/usr/lib/<%- name %>/
 <% } %>
 
 # Electron's SUID sandbox helper must be root:root 4755 or the app crashes at
@@ -59,7 +59,7 @@ override_dh_auto_install:
 override_dh_fixperms:
 	set -e
 	dh_fixperms
-	chmod 4755 debian/open-orpheus/usr/lib/open-orpheus/chrome-sandbox
+	chmod 4755 debian/<%- name %>/usr/lib/<%- name %>/chrome-sandbox
 
 # Don't strip the bundled Electron binaries — that can break them.
 override_dh_strip:
