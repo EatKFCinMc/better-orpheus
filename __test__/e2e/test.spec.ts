@@ -22,7 +22,7 @@ function launchApp() {
   return electron.launch({ args: [".", ...extraElectronArgs] });
 }
 
-// The web pack download pulls the ~160 MB installer from NetEase's CDN and
+// The web pack download pulls the installer from NetEase's CDN and
 // unpacks it with 7z-wasm in-process, which takes minutes on a CI runner.
 const DOWNLOAD_TIMEOUT = 15 * 60_000;
 
@@ -30,13 +30,18 @@ test("package download", async () => {
   test.skip(existsSync(join(dataDir, "package")));
   test.setTimeout(DOWNLOAD_TIMEOUT);
   const electronApp = await launchApp();
-  const window = await electronApp.firstWindow();
-  await expect(window.getByText("缺少包文件")).toBeVisible();
-  await window.getByRole("button", { name: "下载" }).click();
-  await expect(window.getByText("正在下载")).toBeVisible();
-  await window.waitForEvent("close", { timeout: DOWNLOAD_TIMEOUT });
-  // close app
-  await electronApp.close();
+  try {
+    const downloadWindow = await electronApp.firstWindow();
+    await expect(downloadWindow.getByRole("heading", { name: "准备网易云音乐资源" })).toBeVisible();
+    await expect
+      .poll(() => existsSync(join(dataDir, "package/package/orpheus.ntpk")), {
+        message: "The automatic download should publish the validated web pack",
+        timeout: DOWNLOAD_TIMEOUT,
+      })
+      .toBe(true);
+  } finally {
+    await electronApp.close();
+  }
 });
 
 test.describe.serial("ncm app", () => {
@@ -79,18 +84,22 @@ test.describe.serial("ncm app", () => {
   }
 
   test("main window shows", async () => {
-    mainWindow = await electronApp.firstWindow();
+    await expect(async () => {
+      const window = electronApp
+        .windows()
+        .find((page) => page.url().startsWith("orpheus://orpheus/"));
+      expect(window, "Expected the NetEase main window").toBeDefined();
+      mainWindow = window!;
+    }).toPass({ timeout: 30_000 });
     await registerPopoverHandler(mainWindow);
   });
 
   test("app loads", async () => {
     await Promise.all(
       [
-        // NCM Logo shows
-        "tid_toparea_logo",
-        // Account menu on navbar
-        "tid_pc_nav_bar_account",
-      ].map((v) => expect(mainWindow.getByTestId(v).first()).toBeAttached())
+        mainWindow.getByRole("banner").getByRole("link", { name: "设置", exact: true }),
+        mainWindow.getByRole("navigation").getByRole("link", { name: "发现音乐", exact: true }),
+      ].map((locator) => expect(locator).toBeVisible())
     );
   });
 

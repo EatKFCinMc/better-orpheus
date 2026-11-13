@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { cp, mkdir, mkdtemp } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -14,6 +15,11 @@ export default async function () {
   await mkdir(dataDir, { recursive: true });
 
   if (!("TEST_SKIP_BUILD" in process.env)) {
+    // Forge's API bypasses the package script that builds the BetterNCM assets.
+    execFileSync(process.execPath, ["scripts/build-betterncm.ts"], {
+      cwd: resolve(import.meta.dirname, "../.."),
+      stdio: "inherit",
+    });
     process.env["FORGE_BUILD_ONLY"] = "1";
     try {
       await api.package({ interactive: true, outDir: join(testTemp) });
