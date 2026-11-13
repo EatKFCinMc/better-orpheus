@@ -139,7 +139,8 @@ jobs:
         run: sudo apt-get install -y gdb
 
       - name: Build native modules
-        run: pnpm build:modules
+        # Cargo must read the x86_64 linker workaround from .cargo/config.toml.
+        run: env -u RUSTFLAGS pnpm build:modules
 
       - name: Run E2E tests
         env:
@@ -147,8 +148,6 @@ jobs:
           # setuid, and unprivileged user namespaces are restricted) and Xvfb
           # has no GPU, so the tests launch Electron with these extra switches.
           OPEN_ORPHEUS_E2E_ELECTRON_ARGS: --no-sandbox --disable-gpu
-          # Exercise application startup on Xvfb without the native display hooks.
-          DISABLE_DISPLAY_SERVER_HOOKS: "1"
           DEBUG: pw:browser
           OPEN_ORPHEUS_LOG_LEVEL_CONSOLE: info
           PLAYWRIGHT_JUNIT_OUTPUT_DIR: test-results
