@@ -147,6 +147,8 @@ jobs:
           # setuid, and unprivileged user namespaces are restricted) and Xvfb
           # has no GPU, so the tests launch Electron with these extra switches.
           OPEN_ORPHEUS_E2E_ELECTRON_ARGS: --no-sandbox --disable-gpu
+          # Exercise application startup on Xvfb without the native display hooks.
+          DISABLE_DISPLAY_SERVER_HOOKS: "1"
           DEBUG: pw:browser
           OPEN_ORPHEUS_LOG_LEVEL_CONSOLE: info
           PLAYWRIGHT_JUNIT_OUTPUT_DIR: test-results
@@ -177,6 +179,8 @@ jobs:
             gdb -nx -batch \
               -ex 'set debuginfod enabled off' \
               -ex 'set print frame-arguments none' \
+              -ex 'p $_siginfo' \
+              -ex 'info registers' \
               -ex 'info sharedlibrary' \
               -ex 'info proc mappings' \
               -ex 'thread apply all backtrace' \
