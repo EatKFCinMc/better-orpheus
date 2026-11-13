@@ -144,11 +144,21 @@ jobs:
           # setuid, and unprivileged user namespaces are restricted) and Xvfb
           # has no GPU, so the tests launch Electron with these extra switches.
           OPEN_ORPHEUS_E2E_ELECTRON_ARGS: --no-sandbox --disable-gpu
+          DEBUG: pw:browser
+          OPEN_ORPHEUS_LOG_LEVEL_CONSOLE: warn
           PLAYWRIGHT_JUNIT_OUTPUT_DIR: test-results
           PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit.xml
         run: >-
           xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24"
           pnpm e2e --reporter=github,junit
+
+      - name: Upload E2E failure context
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-failure-context
+          path: test-results/**/error-context.md
+          if-no-files-found: ignore
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}

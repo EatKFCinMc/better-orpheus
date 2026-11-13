@@ -33,12 +33,13 @@ test("package download", async () => {
   try {
     const downloadWindow = await electronApp.firstWindow();
     await expect(downloadWindow.getByRole("heading", { name: "准备网易云音乐资源" })).toBeVisible();
-    await expect
-      .poll(() => existsSync(join(dataDir, "package/package/orpheus.ntpk")), {
-        message: "The automatic download should publish the validated web pack",
-        timeout: DOWNLOAD_TIMEOUT,
-      })
-      .toBe(true);
+    if (!downloadWindow.isClosed()) {
+      await downloadWindow.waitForEvent("close", { timeout: DOWNLOAD_TIMEOUT });
+    }
+    expect(
+      existsSync(join(dataDir, "package/package/orpheus.ntpk")),
+      "The automatic download should publish the validated web pack"
+    ).toBe(true);
   } finally {
     await electronApp.close();
   }
@@ -85,10 +86,13 @@ test.describe.serial("ncm app", () => {
 
   test("main window shows", async () => {
     await expect(async () => {
-      const window = electronApp
-        .windows()
-        .find((page) => page.url().startsWith("orpheus://orpheus/"));
-      expect(window, "Expected the NetEase main window").toBeDefined();
+      const windows = electronApp.windows();
+      const window = windows.find((page) => page.url().startsWith("orpheus://orpheus/"));
+      const urls = windows.map((page) => page.url()).join(", ");
+      expect(
+        window,
+        `Expected the NetEase main window. Open pages: ${urls || "(none)"}`
+      ).toBeDefined();
       mainWindow = window!;
     }).toPass({ timeout: 30_000 });
     await registerPopoverHandler(mainWindow);
