@@ -136,7 +136,7 @@ jobs:
         run: sudo env "PATH=$PATH" pnpm exec playwright install-deps chromium
 
       - name: Build native modules
-        run: pnpm build:modules
+        run: env -u RUSTFLAGS pnpm build:modules
 
       - name: Run E2E tests
         env:
