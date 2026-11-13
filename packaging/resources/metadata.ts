@@ -62,8 +62,9 @@ export const metadata: Metadata = {
     scalable: "assets/icon.svg",
   },
   squirrel: {
+    // Keep the installer identity aligned with the Windows AppUserModelID in src/main.ts.
     name: "OpenOrpheus",
-    title: "Open Orpheus",
+    title: "Better Orpheus",
     setupIcon: "assets/icon_256.ico",
   },
   flatpak: {

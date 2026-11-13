@@ -1,6 +1,6 @@
 # Logging
 
-Open Orpheus writes logs with [pino](https://getpino.io/). The main process owns
+Better Orpheus writes logs with [pino](https://getpino.io/). The main process owns
 the logger; preload scripts forward their records to it over IPC.
 
 By default:
@@ -42,7 +42,7 @@ even when they are more verbose:
 OPEN_ORPHEUS_LOG_LEVEL=info \
 OPEN_ORPHEUS_LOG_LEVEL_CONSOLE=info \
 OPEN_ORPHEUS_LOG_LEVEL_FILE=debug \
-open-orpheus
+better-orpheus
 ```
 
 Pino filters at the logger level before the transports, so the logger's base
@@ -55,7 +55,7 @@ A sink-specific level can also re-enable a globally silent sink:
 ```sh
 OPEN_ORPHEUS_LOG_LEVEL=silent \
 OPEN_ORPHEUS_LOG_LEVEL_FILE=debug \
-open-orpheus
+better-orpheus
 ```
 
 This writes only the file. Set `OPEN_ORPHEUS_LOG_LEVEL=silent` (or all three
@@ -72,7 +72,7 @@ Verbose console output while keeping the file at `info`:
 ```sh
 OPEN_ORPHEUS_LOG_LEVEL=info \
 OPEN_ORPHEUS_LOG_LEVEL_CONSOLE=debug \
-open-orpheus
+better-orpheus
 ```
 
 Trace everything into the rotating file, with no console output:
@@ -80,19 +80,19 @@ Trace everything into the rotating file, with no console output:
 ```sh
 OPEN_ORPHEUS_LOG_LEVEL_FILE=trace \
 OPEN_ORPHEUS_LOG_LEVEL_CONSOLE=silent \
-open-orpheus
+better-orpheus
 ```
 
 Force pretty console output when stdout is piped:
 
 ```sh
-OPEN_ORPHEUS_LOG_FORMAT=pretty open-orpheus
+OPEN_ORPHEUS_LOG_FORMAT=pretty better-orpheus
 ```
 
 Force NDJSON even on a terminal:
 
 ```sh
-OPEN_ORPHEUS_LOG_FORMAT=json open-orpheus
+OPEN_ORPHEUS_LOG_FORMAT=json better-orpheus
 ```
 
 Flatpak:

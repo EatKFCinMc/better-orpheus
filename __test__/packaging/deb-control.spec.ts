@@ -15,16 +15,16 @@ import {
 } from "../../packaging/deb/control";
 
 const pkg = {
-  name: "open-orpheus",
-  author: { name: "YUCLing", email: "luotianyi@luotianyi.me" },
+  name: "better-orpheus",
+  author: { name: "EatKFCinMc", email: "mayoad451@gmail.com" },
   homepage: "https://github.com/EatKFCinMc/better-orpheus",
   description: "An open-source implementation.\nIt plays music.",
 };
 
 const options: ControlOptions = {
-  name: "open-orpheus",
+  name: "better-orpheus",
   section: "sound",
-  maintainer: "YUCLing <luotianyi@luotianyi.me>",
+  maintainer: "EatKFCinMc <mayoad451@gmail.com>",
   homepage: "https://github.com/EatKFCinMc/better-orpheus",
   description: "An open-source implementation.\n It plays music.",
 };
@@ -32,9 +32,9 @@ const options: ControlOptions = {
 describe("resolveControlOptions", () => {
   it("takes everything from package.json by default", () => {
     expect(resolveControlOptions({}, pkg)).toEqual({
-      name: "open-orpheus",
+      name: "better-orpheus",
       section: "sound",
-      maintainer: "YUCLing <luotianyi@luotianyi.me>",
+      maintainer: "EatKFCinMc <mayoad451@gmail.com>",
       homepage: "https://github.com/EatKFCinMc/better-orpheus",
       // Continuation lines get the Debian field indent.
       description: "An open-source implementation.\n It plays music.",
@@ -76,9 +76,9 @@ describe("resolveControlOptions", () => {
     expect(resolveControlOptions({}, { author: { name: "A" } }).maintainer).toBe("A");
   });
 
-  it("falls back to open-orpheus defaults when metadata is missing", () => {
+  it("falls back to better-orpheus defaults when metadata is missing", () => {
     expect(resolveControlOptions({}, {})).toEqual({
-      name: "open-orpheus",
+      name: "better-orpheus",
       section: "sound",
       maintainer: "",
       homepage: "",
@@ -100,12 +100,12 @@ describe("generateControl", () => {
   it("renders a debian/control file", async () => {
     const control = await generateControl(options);
 
-    expect(control).toContain("Source: open-orpheus");
+    expect(control).toContain("Source: better-orpheus");
     expect(control).toContain("Section: sound");
     expect(control).toContain("Priority: optional");
-    expect(control).toContain("Maintainer: YUCLing <luotianyi@luotianyi.me>");
+    expect(control).toContain("Maintainer: EatKFCinMc <mayoad451@gmail.com>");
     expect(control).toContain("Homepage: https://github.com/EatKFCinMc/better-orpheus");
-    expect(control).toContain("Package: open-orpheus");
+    expect(control).toContain("Package: better-orpheus");
     expect(control).toContain("Architecture: any");
     expect(control).toContain("Description: An open-source implementation.");
     expect(control).toContain("\n It plays music.");
@@ -132,7 +132,7 @@ describe("generateControl", () => {
     const control = await generateControl({ ...options, name: "other-app" });
 
     expect(control).toContain("Source: other-app");
-    expect(control).not.toContain("Source: open-orpheus");
+    expect(control).not.toContain("Source: better-orpheus");
   });
 });
 
@@ -146,7 +146,7 @@ describe("createControlFile", () => {
     await createControlFile("/stage/debian/control", options);
 
     await expect(readFile("/stage/debian/control", "utf-8")).resolves.toContain(
-      "Package: open-orpheus"
+      "Package: better-orpheus"
     );
   });
 

@@ -6,18 +6,19 @@ const execFile = promisify(execFileCb);
 /**
  * Create a gzipped tarball of the project source.
  *
- * The tarball contains exactly the files that are NOT ignored by `.gitignore`
- * — tracked files plus untracked-but-not-ignored files (via
+ * The default file list contains tracked files plus untracked-but-not-ignored files (via
  * `git ls-files --cached --others --exclude-standard`) — under a single
  * top-level directory `<name>-<version>/`. `excludePaths` may drop additional
  * directory prefixes (relative to `projectRoot`).
+ * `additionalPaths` supplies project-relative entries from outside the root Git index.
  */
 export async function createProjectTarball(
   projectRoot: string,
   dest: string,
   name: string,
   version: string,
-  excludePaths: string[] = []
+  excludePaths: string[] = [],
+  additionalPaths: string[] = []
 ) {
   // Files that are tracked in the index but deleted from the working tree
   // without being staged (`git rm`) still show up in `--cached` yet no longer
@@ -34,8 +35,7 @@ export async function createProjectTarball(
   ]);
   const deleted = new Set(deletedFiles.split("\0").filter(Boolean));
 
-  const filtered = nullSeparatedFiles
-    .split("\0")
+  const filtered = [...new Set([...nullSeparatedFiles.split("\0"), ...additionalPaths])]
     .filter((f) => {
       if (!f || deleted.has(f)) return false;
       return !excludePaths.some((p) => f === p || f.startsWith(p + "/"));

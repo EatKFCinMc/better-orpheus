@@ -34,7 +34,7 @@ export interface DebOptions {
 
 /**
  * Parse the upstream version of the top `debian/changelog` entry, e.g.
- * `open-orpheus (0.16.2-1) unstable; urgency=medium` → `0.16.2` (revision
+ * `better-orpheus (0.1.0-1) unstable; urgency=medium` → `0.1.0` (revision
  * stripped). Returns undefined if no entry can be parsed.
  */
 function parseChangelogVersion(changelog: string): string | undefined {

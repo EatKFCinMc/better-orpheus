@@ -1,8 +1,8 @@
-# Contributing to Open Orpheus
+# Contributing to Better Orpheus
 
 [中文版](./CONTRIBUTING.md)
 
-First off, thank you for taking the time to contribute to Open Orpheus! Whether it's filing a bug report, improving documentation, or submitting code, every contribution matters.
+First off, thank you for taking the time to contribute to Better Orpheus! Whether it's filing a bug report, improving documentation, or submitting code, every contribution matters.
 
 ## Table of Contents
 
@@ -14,11 +14,11 @@ First off, thank you for taking the time to contribute to Open Orpheus! Whether 
 
 ## Code of Conduct
 
-Please be kind and respectful in all interactions. We want Open Orpheus to be a welcoming community for everyone. See [CODE_OF_CONDUCT_en.md](./CODE_OF_CONDUCT_en.md) for the full text.
+Please be kind and respectful in all interactions. We want Better Orpheus to be a welcoming community for everyone. See [CODE_OF_CONDUCT_en.md](./CODE_OF_CONDUCT_en.md) for the full text.
 
 ## Project Overview
 
-Open Orpheus is an Electron-based host for Netease Cloud Music's Orpheus browser runtime. It does not modify or reimplement the client logic — instead it provides a cross-platform runtime environment for the original Orpheus web application, with a focus on **interoperability**.
+Better Orpheus is an Electron-based host for Netease Cloud Music's Orpheus browser runtime. It does not modify or reimplement the client logic — instead it provides a cross-platform runtime environment for the original Orpheus web application, with a focus on **interoperability**.
 
 ### Tech Stack
 
@@ -33,7 +33,7 @@ Open Orpheus is an Electron-based host for Netease Cloud Music's Orpheus browser
 ### Directory Structure
 
 ```
-open-orpheus/
+better-orpheus/
 ├── src/                    # Electron main process & preload
 │   ├── main.ts             # App entry point, single-instance lock, protocol registration
 │   ├── preload.ts          # Renderer bridge entry
@@ -122,7 +122,7 @@ flowchart TB
 
 ### Key Concepts
 
-- **Pack Files**: Netease's `.ntpk` / `.pack` resource format, containing HTML, JS, CSS, images, and other Orpheus runtime assets. Open Orpheus automatically downloads them from Netease's CDN on first launch and stores them in `{userData}/package/`.
+- **Pack Files**: Netease's `.ntpk` / `.pack` resource format, containing HTML, JS, CSS, images, and other Orpheus runtime assets. Better Orpheus automatically downloads them from Netease's CDN on first launch and stores them in `{userData}/package/`.
 - **Custom Protocols**: The project registers three privileged schemes — `orpheus://` (the web app itself), `gui://` (Svelte auxiliary UI), and `audio://` (audio streaming) — all supporting Fetch API and CORS.
 - **Menu Rendering**: Context menus use Electron BrowserWindows (frameless, transparent, always-on-top) loading the `gui://frontend/menu` route. On non-Wayland environments, a positioned popup window is used; on Wayland, a fullscreen transparent overlay with cursor capture is used due to protocol constraints.
 
@@ -136,7 +136,7 @@ Please include as much of the following as possible:
 
 - **OS and version** (e.g. Fedora 42, Windows 11)
 - **Desktop environment** (if on Linux)
-- **Open Orpheus version**
+- **Better Orpheus version**
 - **Steps to reproduce** — the minimal steps that reliably trigger the issue
 - **Expected behavior** vs **actual behavior**
 - **Relevant logs or screenshots** (if applicable)
@@ -182,7 +182,7 @@ rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli
 ```
 
-For the root project, everything works just like any other Electron Forge project, but Open Orpheus has some native modules of its own, which require a few extra setup steps.
+For the root project, everything works just like any other Electron Forge project, but Better Orpheus has some native modules of its own, which require a few extra setup steps.
 
 In the following steps, `pnpm` will be used as Node's package manager. Other package managers are not recommended.
 
@@ -196,7 +196,7 @@ pnpm install
 
 ### Build Modules
 
-Inside `modules` folder, there are a few native modules that Open Orpheus requires to run.
+Inside `modules` folder, there are a few native modules that Better Orpheus requires to run.
 
 Run from the root directory:
 

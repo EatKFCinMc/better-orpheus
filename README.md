@@ -12,11 +12,12 @@
   - macOS
   - Windows
 - 开源
+- BetterNCM 支持
 
 ## 改动
 
 - 添加对 Better-NCM 支持的兼容层
-- 鉴于2.x版本的插件库更丰富~~（以及本人更喜欢2.x的ui）~~，软件包降级为 2.10.13.202675 版本
+- 鉴于2.x版本的插件库更丰富 <s>（以及本人更喜欢2.x的ui）</s> ，软件包降级为，且仅支持 2.10.13.202675 版本
 
 ## 截图
 
@@ -25,12 +26,22 @@
 
 ![主界面](assets/screenshots/1.png)
 
+在此截图中使用到的插件：
+
+- Material You - by solstice23
+- Lyric Bar - by solstice23
+- MikuPlugin - by 小岩喵
+
 </details>
 
 <details>
 <summary>播放界面</summary>
 
 ![播放界面](assets/screenshots/2.png)
+
+在此截图中使用到的插件：
+
+- RefinedNowPlaying - by solstice23
 
 </details>
 
@@ -100,5 +111,6 @@ Better Orpheus 是一个以**互操作性**为目的的独立开源项目，与�
 - **本项目不提供、不鼓励任何用于绕过广告、付费内容、会员权益或数字版权保护机制（DRM）的功能或修改。** 任何此类用途均明确超出本项目的范围，且会被主动抵制。
 - 使用本项目时，您仍需遵守网易云音乐的[网易云音乐服务条款](https://st.music.163.com/official-terms/service)及相关法律法规。
 - 本项目按"现状"提供，不对因使用本项目所产生的任何后果（包括但不限于账号封禁、服务中断或法律责任）承担责任。
+- 本项目不对使用过程中安装的任何插件产生的任何后果（包括但不限于账号封禁、服务中断或法律责任）承担责任。
 
 > "网易云音乐"、"Orpheus" 等名称及相关商标归网易公司所有。

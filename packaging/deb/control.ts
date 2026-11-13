@@ -57,7 +57,7 @@ export function resolveControlOptions(
   }
 ): ControlOptions {
   return {
-    name: metadata.name ?? pkg.name ?? "open-orpheus",
+    name: metadata.name ?? pkg.name ?? "better-orpheus",
     section: metadata.section ?? "sound",
     maintainer: metadata.maintainer ?? formatMaintainer(pkg.author),
     homepage: metadata.homepage ?? pkg.homepage ?? "",

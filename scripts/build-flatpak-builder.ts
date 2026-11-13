@@ -2,7 +2,6 @@ import { execFile as execFileCb } from "node:child_process";
 import { resolve } from "node:path";
 import { mkdir, readFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import { createProjectTarball } from "../packaging/common/archive.ts";
 import { RUST_VERSION } from "../packaging/common/toolchain.ts";
 import {
   baseManifest,
@@ -11,6 +10,7 @@ import {
   PNPM_NATIVE_PACKAGES,
   writeManifest,
 } from "../packaging/flatpak/manifest.ts";
+import { createFlatpakSourceTarball } from "../packaging/flatpak/source.ts";
 import { metadata } from "../packaging/resources/metadata.ts";
 import pkg from "../package.json" with { type: "json" };
 
@@ -213,6 +213,7 @@ const sourceTarball = `${pkgName}-${pkgVersion}.tar.gz`;
 // Set FLATPAK_SOURCE to a remote archive URL and its sha256 checksum separated
 // by '+' (e.g. https://github.com/.../v0.5.0.tar.gz+abc123...) to skip local
 // tarball creation and embed the remote URL directly in the manifest.
+// The remote tarball must already contain the BetterNCM source and resources.
 const flatpakSource = process.env.FLATPAK_SOURCE;
 const flatpakSourceMatch = flatpakSource?.match(/^(.+)\+([0-9a-fA-F]{64})$/);
 
@@ -232,9 +233,7 @@ if (flatpakSourceMatch) {
 } else {
   const sourceTarballPath = resolve(outDir, sourceTarball);
   console.log(`Creating project source tarball: ${sourceTarball}`);
-  // git-derived file list (tracked + untracked-but-not-ignored), so uncommitted
-  // edits are included — same wheel used by the RPM/deb source staging.
-  await createProjectTarball(projectRoot, sourceTarballPath, pkgName, pkgVersion);
+  await createFlatpakSourceTarball(projectRoot, sourceTarballPath, pkgName, pkgVersion);
   projectSource = {
     type: "archive",
     path: sourceTarball,

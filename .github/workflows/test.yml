@@ -136,7 +136,7 @@ jobs:
         run: sudo env "PATH=$PATH" pnpm exec playwright install-deps chromium
 
       - name: Build native modules
-        run: pnpm build:modules
+        run: env -u RUSTFLAGS pnpm build:modules
 
       - name: Run E2E tests
         env:
@@ -300,7 +300,7 @@ jobs:
             -e GITHUB_ACTIONS \
             "$LINTER_IMAGE" \
             --gha-format --exceptions --exceptions-repo stable \
-            manifest io.github.yucling.open-orpheus.yaml
+            manifest io.github.eatkfcinmc.better-orpheus.yaml
 
       - name: Set up Flatpak runtimes
         run: |
@@ -315,7 +315,7 @@ jobs:
         run: |
           flatpak-builder --user --force-clean --repo=repo \
             --install-deps-from=flathub \
-            build-dir io.github.yucling.open-orpheus.yaml
+            build-dir io.github.eatkfcinmc.better-orpheus.yaml
 
       - name: Lint the built repository
         working-directory: out/make/flatpak-builder
