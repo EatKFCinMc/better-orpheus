@@ -1,6 +1,8 @@
 # Better Orpheus
 
-Better Orpheus 是由 EatKFCinMc 维护的 [Open Orpheus](https://github.com/YUCLing/open-orpheus) 分支，集成了 [BetterNCM](https://github.com/std-microblock/chromatic/tree/v2) 兼容层。
+[English Version](docs/README_en.md)
+
+以 Open Orpheus 为基础， 添加了 [BetterNCM](https://github.com/std-microblock/chromatic/tree/v2) 的兼容层
 
 ## 功能
 
