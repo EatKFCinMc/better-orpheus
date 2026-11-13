@@ -135,6 +135,9 @@ jobs:
       - name: Install Electron runtime dependencies
         run: sudo env "PATH=$PATH" pnpm exec playwright install-deps chromium
 
+      - name: Install GDB
+        run: sudo apt-get install -y gdb
+
       - name: Build native modules
         run: pnpm build:modules
 
@@ -145,19 +148,51 @@ jobs:
           # has no GPU, so the tests launch Electron with these extra switches.
           OPEN_ORPHEUS_E2E_ELECTRON_ARGS: --no-sandbox --disable-gpu
           DEBUG: pw:browser
-          OPEN_ORPHEUS_LOG_LEVEL_CONSOLE: warn
+          OPEN_ORPHEUS_LOG_LEVEL_CONSOLE: info
           PLAYWRIGHT_JUNIT_OUTPUT_DIR: test-results
           PLAYWRIGHT_JUNIT_OUTPUT_NAME: junit.xml
-        run: >-
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24"
-          pnpm e2e --reporter=github,junit
+        run: |
+          core_dir="$RUNNER_TEMP/e2e-cores"
+          mkdir -m 700 "$core_dir"
+          original_core_pattern=$(cat /proc/sys/kernel/core_pattern)
+          trap 'sudo sysctl -q -w "kernel.core_pattern=$original_core_pattern"' EXIT
+          # %E identifies the executable even if the crashing thread has a different name.
+          sudo sysctl -q -w "kernel.core_pattern=$core_dir/%E.%p"
+          ulimit -c unlimited
+          xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" \
+            pnpm e2e --reporter=github,junit
+
+      - name: Collect Electron crash backtraces
+        if: ${{ failure() }}
+        run: |
+          shopt -s nullglob
+          cores=("$RUNNER_TEMP/e2e-cores/"*!electron.*)
+          if (( ${#cores[@]} == 0 )); then
+            echo "No Electron core dump was captured."
+            exit 0
+          fi
+          mkdir -p test-results/electron-crashes
+          for core in "${cores[@]}"; do
+            report="test-results/electron-crashes/electron-${core##*.}.txt"
+            gdb -nx -batch \
+              -ex 'set debuginfod enabled off' \
+              -ex 'set print frame-arguments none' \
+              -ex 'info sharedlibrary' \
+              -ex 'info proc mappings' \
+              -ex 'thread apply all backtrace' \
+              node_modules/electron/dist/electron "$core" > "$report" 2>&1 || {
+                echo "::warning::GDB could not complete the Electron backtrace. See $report."
+              }
+          done
 
       - name: Upload E2E failure context
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
           name: e2e-failure-context
-          path: test-results/**/error-context.md
+          path: |
+            test-results/**/error-context.md
+            test-results/electron-crashes/*.txt
           if-no-files-found: ignore
 
       - name: Upload test results to Codecov
