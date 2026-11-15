@@ -16,7 +16,7 @@ export interface ManageContract {
   checkUpdate(ignoreCache?: boolean): Promise<UpdateInfo | null>;
 
   pack: {
-    getWebPackCommitHash(): Promise<string>;
+    getWebPackInfo(): Promise<{ commit: string; isRecommended: boolean }>;
     redownloadPackage(): Promise<void>;
   };
   plugins: {

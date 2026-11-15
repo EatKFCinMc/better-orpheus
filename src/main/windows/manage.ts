@@ -6,6 +6,7 @@ import { readdir, stat, rm } from "node:fs/promises";
 import { app, Menu } from "electron";
 import type { BrowserWindowConstructorOptions } from "electron";
 
+import versions from "../../../versions.json";
 import packManager from "../pack";
 import WebPack from "../packs/WebPack";
 import { wasm as wasmDir } from "../folders";
@@ -51,8 +52,14 @@ class ManageWindow extends ManagedWindow {
       checkUpdate: async (event, ignoreCache = false) => await checkUpdate(ignoreCache),
 
       pack: {
-        getWebPackCommitHash: async () => {
-          return packManager.getPack<WebPack>("web").getCommitHash();
+        getWebPackInfo: async () => {
+          const pack = packManager.getPack<WebPack>("web");
+          const commit = await pack.getCommitHash();
+          const isRecommended =
+            commit || versions.commit
+              ? commit === versions.commit
+              : await pack.matchesSha256(versions.webPackSha256);
+          return { commit, isRecommended };
         },
         redownloadPackage: async () => {
           app.relaunch({

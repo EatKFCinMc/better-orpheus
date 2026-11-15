@@ -2,5 +2,6 @@
   "version": "2.10.13",
   "build": "202675",
   "commit": "",
+  "webPackSha256": "56363adc8d716e63098938f07ce72e837c6e9ff57d5a1e463b325bb6b72cc446",
   "downloadUrl": "https://d1.music.126.net/dmusic/NeteaseCloudMusic_Music_official_2.10.13.202675_32.exe"
 }

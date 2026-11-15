@@ -100,4 +100,12 @@ export default class WebPack extends Pack {
     LOGGER.debug({ commit }, "Web pack commit hash read");
     return commit;
   }
+
+  async matchesSha256(expected: string): Promise<boolean> {
+    const hash = crypto.createHash("sha256");
+    for await (const chunk of createReadStream(this.path)) {
+      hash.update(chunk);
+    }
+    return hash.digest("hex") === expected;
+  }
 }
